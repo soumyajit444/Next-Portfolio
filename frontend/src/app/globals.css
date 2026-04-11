@@ -1,0 +1,17 @@
+@import "tailwindcss";
+@import "../styles/variables.css";
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-primary);
+  transition:
+    background 0.3s ease,
+    color 0.3s ease;
+}
