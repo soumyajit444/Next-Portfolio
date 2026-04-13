@@ -8,26 +8,26 @@ import Contact from "@/components/sections/Contact";
 
 export default function Page() {
   return (
-    <div className="w-screen h-screen overflow-x-auto overflow-y-hidden flex snap-x snap-mandatory">
-      <section className="min-w-screen h-screen snap-start">
-        <Hero />
-      </section>
+    <div
+      className="flex h-screen snap-x snap-mandatory"
+      style={{
+        width: "100vw",
+        overflowX: "scroll",
+        overflowY: "hidden",
+        scrollbarWidth: "none" /* Firefox */,
+        msOverflowStyle: "none" /* IE/Edge */,
+      }}>
+      {/* Hide scrollbar for Chrome/Safari */}
+      <style>{`div::-webkit-scrollbar { display: none; }`}</style>
 
-      <section className="min-w-screen h-screen snap-start">
-        <About />
-      </section>
-
-      <section className="min-w-screen h-screen snap-start">
-        <Skills />
-      </section>
-
-      <section className="min-w-screen h-screen snap-start">
-        <Experience />
-      </section>
-
-      <section className="min-w-screen h-screen snap-start">
-        <Contact />
-      </section>
+      {[Hero, About, Skills, Experience, Contact].map((Section, i) => (
+        <section
+          key={i}
+          className="snap-start shrink-0"
+          style={{ width: "100vw", height: "100vh" }}>
+          <Section />
+        </section>
+      ))}
     </div>
   );
 }

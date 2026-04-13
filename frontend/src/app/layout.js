@@ -1,6 +1,7 @@
 import { Work_Sans } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
+import ThemeToggle from "@/components/ui/ThemeToggle";
 
 const workSans = Work_Sans({
   subsets: ["latin"],
@@ -13,6 +14,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className={workSans.variable} data-theme="light">
       <body>
+        <ThemeToggle />
         {children}
         <Toaster position="top-right" richColors />
       </body>
