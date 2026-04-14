@@ -1,33 +1,92 @@
 "use client";
 
+import { useRef, useEffect, useState } from "react";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { Observer } from "gsap/Observer";
 import Hero from "@/components/sections/Hero";
 import About from "@/components/sections/About";
 import Skills from "@/components/sections/Skills";
 import Experience from "@/components/sections/Experience";
 import Contact from "@/components/sections/Contact";
 
-export default function Page() {
-  return (
-    <div
-      className="flex h-screen snap-x snap-mandatory"
-      style={{
-        width: "100vw",
-        overflowX: "scroll",
-        overflowY: "hidden",
-        scrollbarWidth: "none" /* Firefox */,
-        msOverflowStyle: "none" /* IE/Edge */,
-      }}>
-      {/* Hide scrollbar for Chrome/Safari */}
-      <style>{`div::-webkit-scrollbar { display: none; }`}</style>
+gsap.registerPlugin(ScrollTrigger, Observer);
 
-      {[Hero, About, Skills, Experience, Contact].map((Section, i) => (
-        <section
-          key={i}
-          className="snap-start shrink-0"
-          style={{ width: "100vw", height: "100vh" }}>
-          <Section />
-        </section>
-      ))}
+const sections = [Hero, About, Skills, Experience, Contact];
+
+export default function Page() {
+  const wrapperRef = useRef(null);
+  const [heroScrollProgress, setHeroScrollProgress] = useState(0);
+
+  useEffect(() => {
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return;
+
+    // Wait a tick so DOM is fully painted before GSAP reads layout
+    const ctx = gsap.context(() => {
+      const sectionEls = gsap.utils.toArray(".h-section", wrapper);
+
+      const tween = gsap.to(sectionEls, {
+        xPercent: -100 * (sectionEls.length - 1),
+        ease: "none",
+        scrollTrigger: {
+          trigger: wrapper,
+          pin: wrapper, // pin the wrapper, not a parent React manages
+          scrub: 1,
+          snap: {
+            snapTo: 1 / (sectionEls.length - 1),
+            duration: { min: 0.3, max: 0.6 },
+            ease: "power2.inOut",
+          },
+          end: () => `+=${wrapper.offsetWidth}`,
+          onUpdate: (self) => {
+            const progress = Math.min(self.progress * sectionEls.length, 1);
+            setHeroScrollProgress(progress);
+
+            window.dispatchEvent(
+              new CustomEvent("bgscroll", { detail: self.progress }),
+            );
+          },
+        },
+      });
+
+      return () => tween.kill();
+    }, wrapper); // scope context to wrapper
+
+    return () => ctx.revert(); // cleanly removes all GSAP, avoids DOM conflict
+  }, []);
+
+  return (
+    <div style={{ overflowX: "hidden", position: "relative" }}>
+      {/* CONTENT */}
+      <div
+        ref={wrapperRef}
+        style={{
+          display: "flex",
+          flexWrap: "nowrap",
+          width: `${sections.length * 100}vw`,
+          height: "100vh",
+        }}>
+        {sections.map((Section, i) => (
+          <div
+            key={i}
+            className="h-section"
+            style={{
+              width: "100vw",
+              height: "100vh",
+              flexShrink: 0,
+              overflow: i === 0 ? "visible" : "hidden",
+              position: "relative",
+              zIndex: i === 0 ? 0 : i,
+            }}>
+            {i === 0 ? (
+              <Hero scrollProgress={heroScrollProgress} />
+            ) : (
+              <Section />
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

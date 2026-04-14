@@ -45,7 +45,7 @@ export default function ThemeToggle() {
         {/* TOGGLE KNOB */}
         <div
           className={`w-8 h-8 rounded-full bg-white shadow-md transform transition-all duration-300 ${
-            isDark ? "translate-x-10" : "translate-x-0"
+            isDark ? "translate-x-12" : "translate-x-0"
           }`}
         />
       </button>
