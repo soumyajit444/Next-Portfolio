@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 const Spline = dynamic(() => import("@splinetool/react-spline"), {
   ssr: false,
@@ -12,10 +12,11 @@ const Spline = dynamic(() => import("@splinetool/react-spline"), {
   ),
 });
 
-export default function Hero() {
+export default function Hero({ scrollProgress = 0 }) {
   const [mounted, setMounted] = useState(false);
   const [theme, setTheme] = useState("light");
   const [splineError, setSplineError] = useState(false);
+  const splineContainerRef = useRef(null);
 
   useEffect(() => {
     setMounted(true);
@@ -38,12 +39,17 @@ export default function Hero() {
     return () => observer.disconnect();
   }, []);
 
+  // Drive scale from scrollProgress: 1 → 1.35 as user scrolls away from Hero
+  useEffect(() => {
+    if (!splineContainerRef.current) return;
+    const scale = 1 + scrollProgress * 0.3;
+    splineContainerRef.current.style.transform = `scale(${scale})`;
+  }, [scrollProgress]);
+
   if (!mounted) return null;
 
-  const LIGHT_SCENE =
-    "https://prod.spline.design/TVQvHCm6eDFG6vqy/scene.splinecode";
-  const DARK_SCENE =
-    "https://prod.spline.design/MfaVLvpv2dL5UwUb/scene.splinecode";
+  const LIGHT_SCENE = "/light-chips.spline";
+  const DARK_SCENE = "/dark-chips.spline";
   const scene = theme === "dark" ? DARK_SCENE : LIGHT_SCENE;
 
   return (
@@ -53,9 +59,8 @@ export default function Hero() {
         background: "var(--color-bg)",
         color: "var(--color-text)",
         fontFamily: "var(--font-primary)",
-        // NO padding here — moved to inner wrapper below
       }}>
-      {/* LEFT SIDE — padding lives here now, not on the section */}
+      {/* LEFT SIDE */}
       <div
         style={{
           width: "50%",
@@ -68,7 +73,7 @@ export default function Hero() {
           paddingTop: "2.5rem",
           paddingBottom: "2.5rem",
         }}>
-        {/* Label row */}
+        {/* Label */}
         <div
           style={{
             display: "flex",
@@ -78,7 +83,6 @@ export default function Hero() {
           }}>
           <span
             style={{
-              display: "inline-block",
               width: "28px",
               height: "1px",
               background: "var(--color-text-muted)",
@@ -103,7 +107,6 @@ export default function Hero() {
               fontWeight: 700,
               lineHeight: 1.05,
               letterSpacing: "-0.03em",
-              color: "var(--color-text)",
               margin: 0,
             }}>
             Soumyajit
@@ -121,20 +124,20 @@ export default function Hero() {
           </h1>
         </div>
 
-        {/* Subheading */}
+        {/* Description */}
         <p
           style={{
             fontSize: "1rem",
             lineHeight: 1.75,
             color: "var(--color-text-muted)",
             maxWidth: "440px",
-            margin: "0 0 2.5rem",
+            marginBottom: "2.5rem",
           }}>
           Building scalable, high-performance web applications with a focus on
           modern UI/UX, clean architecture, and efficient state management.
         </p>
 
-        {/* Tech pills */}
+        {/* Tech */}
         <div
           style={{
             display: "flex",
@@ -166,7 +169,7 @@ export default function Hero() {
           ))}
         </div>
 
-        {/* CTA Buttons */}
+        {/* Buttons */}
         <div style={{ display: "flex", gap: "12px", marginBottom: "4rem" }}>
           <button
             style={{
@@ -189,7 +192,6 @@ export default function Hero() {
               background: "transparent",
               color: "var(--color-text-muted)",
               fontSize: "12px",
-              fontWeight: 500,
               letterSpacing: "0.06em",
               textTransform: "uppercase",
               border: "0.5px solid var(--color-border)",
@@ -200,24 +202,19 @@ export default function Hero() {
           </button>
         </div>
 
-        {/* Stats row */}
-        <div style={{ display: "flex", alignItems: "stretch", gap: "2rem" }}>
+        {/* Stats */}
+        <div style={{ display: "flex", gap: "2rem" }}>
           {[
             { value: "3+", label: "Years exp." },
             { value: "15+", label: "Skills" },
             { value: "∞", label: "Cups of coffee" },
           ].map((stat, i, arr) => (
-            <div
-              key={stat.label}
-              style={{ display: "flex", alignItems: "stretch", gap: "2rem" }}>
+            <div key={stat.label} style={{ display: "flex", gap: "2rem" }}>
               <div>
                 <div
                   style={{
                     fontSize: "1.5rem",
                     fontWeight: 700,
-                    color: "var(--color-text)",
-                    letterSpacing: "-0.02em",
-                    lineHeight: 1,
                     marginBottom: "4px",
                   }}>
                   {stat.value}
@@ -232,11 +229,11 @@ export default function Hero() {
                   {stat.label}
                 </div>
               </div>
+
               {i < arr.length - 1 && (
                 <div
                   style={{
                     width: "0.5px",
-                    alignSelf: "stretch",
                     background: "var(--color-border)",
                   }}
                 />
@@ -247,28 +244,64 @@ export default function Hero() {
       </div>
 
       {/* RIGHT SIDE */}
-      <div style={{ width: "50%", height: "100%" }}>
-        {!splineError ? (
-          <Spline
-            key={theme}
-            scene={scene}
-            onError={(e) => {
-              console.error("Spline Error:", e);
-              setSplineError(true);
-            }}
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-center px-6">
-            <div>
-              <p className="text-lg font-medium">3D Preview Unavailable</p>
-              <p
-                className="text-sm mt-2"
-                style={{ color: "var(--color-text-muted)" }}>
-                Something went wrong while loading the animation.
-              </p>
+      <div
+        style={{
+          width: "50%",
+          height: "100%",
+          overflow: "visible",
+          position: "relative",
+        }}>
+        {/* Extended background */}
+        <div
+          ref={splineContainerRef}
+          style={{
+            width: "120%",
+            height: "100%",
+            transformOrigin: "center center",
+            willChange: "transform",
+            transition: "transform 0.1s linear",
+
+            WebkitMaskImage:
+              "linear-gradient(to right, rgba(0,0,0,1) 80%, rgba(0,0,0,0) 100%)",
+            maskImage:
+              "linear-gradient(to right, rgba(0,0,0,1) 80%, rgba(0,0,0,0) 100%)",
+          }}>
+          {!splineError ? (
+            <Spline
+              key={theme}
+              scene={scene}
+              onError={(e) => {
+                console.error("Spline Error:", e);
+                setSplineError(true);
+              }}
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-center px-6">
+              <div>
+                <p className="text-lg font-medium">3D Preview Unavailable</p>
+                <p
+                  className="text-sm mt-2"
+                  style={{ color: "var(--color-text-muted)" }}>
+                  Something went wrong while loading the animation.
+                </p>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
+
+        {/* Fade buffer (only extra 10%) */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            right: 0,
+            width: "10%",
+            height: "100%",
+            pointerEvents: "none",
+            background:
+              "linear-gradient(to right, rgba(0,0,0,0), var(--color-bg))",
+          }}
+        />
       </div>
     </section>
   );
