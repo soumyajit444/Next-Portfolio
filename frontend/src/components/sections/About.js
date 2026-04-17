@@ -205,15 +205,15 @@ function IconBox({ icon }) {
 /* ─── scatter destinations per card (vw/vh units as multipliers) ─── */
 const SCATTER = {
   profile: { x: -120, y: -80, r: -25 },
-  skills: { x: -140, y: 60, r: 18 },
+  hobbies: { x: -140, y: 60, r: 18 },
   bio: { x: 60, y: -100, r: 12 },
-  hobbies: { x: -100, y: 120, r: -20 },
+  skills: { x: -100, y: 120, r: -20 },
   address: { x: 40, y: 130, r: 15 },
   contact: { x: 140, y: 80, r: -10 },
 };
 
 /* ─── ScatterCard wrapper ─── */
-function ScatterCard({ scatterKey, scrollProgress, children }) {
+function ScatterCard({ scatterKey, scrollProgress, children, style = {} }) {
   const s = SCATTER[scatterKey];
 
   const x = useTransform(scrollProgress, [0, 1], [0, s.x * 8]);
@@ -237,6 +237,7 @@ function ScatterCard({ scatterKey, scrollProgress, children }) {
         opacity: springO,
         scale: springS,
         willChange: "transform, opacity",
+        ...style,
       }}>
       {children}
     </motion.div>
@@ -314,7 +315,7 @@ const About = () => {
             display: "grid",
             gridTemplateColumns: "220px 1fr",
             gap: 22,
-            alignItems: "start",
+            alignItems: "stretch",
           }}>
           {/* ════ LEFT COLUMN ════ */}
           <div
@@ -323,10 +324,26 @@ const About = () => {
               flexDirection: "column",
               gap: 18,
               height: "100%",
+              alignSelf: "stretch",
             }}>
             {/* PROFILE CARD */}
-            <ScatterCard scatterKey="profile" scrollProgress={adjustedProgress}>
-              <div ref={profileR.ref} style={{ flex: "3 1 0", minHeight: 0 }}>
+            <ScatterCard
+              scatterKey="profile"
+              scrollProgress={adjustedProgress}
+              style={{
+                flex: "3 1 0",
+                minHeight: 0,
+                display: "flex",
+                flexDirection: "column",
+              }}>
+              <div
+                ref={profileR.ref}
+                style={{
+                  flex: 1,
+                  minHeight: 0,
+                  display: "flex",
+                  flexDirection: "column",
+                }}>
                 <Card
                   variants={fadeLeft(0)}
                   animate={profileR.controls}
@@ -338,7 +355,7 @@ const About = () => {
                     justifyContent: "center",
                     gap: 12,
                     textAlign: "center",
-
+                    flex: 1,
                     boxSizing: "border-box",
                   }}>
                   <div
@@ -431,68 +448,93 @@ const About = () => {
             </ScatterCard>
 
             {/* SKILLS CARD */}
-            <ScatterCard scatterKey="skills" scrollProgress={adjustedProgress}>
-              <div ref={skillsR.ref} style={{ flex: "2 1 0", minHeight: 0 }}>
+            <ScatterCard
+              scatterKey="hobbies"
+              scrollProgress={adjustedProgress}
+              style={{
+                flex: "2 1 0",
+                minHeight: 0,
+                display: "flex",
+                flexDirection: "column",
+              }}>
+              <div
+                ref={hobbyR.ref}
+                style={{
+                  flex: 1,
+                  minHeight: 0,
+                  display: "flex",
+                  flexDirection: "column",
+                }}>
                 <Card
                   variants={fadeLeft(0.1)}
-                  animate={skillsR.controls}
+                  animate={hobbyR.controls}
                   style={{
                     padding: "20px 18px",
                     display: "flex",
                     flexDirection: "column",
                     gap: 0,
                     height: "100%",
+                    flex: 1,
                     boxSizing: "border-box",
                     overflow: "hidden",
                   }}>
-                  <SectionLabel>Skills</SectionLabel>
+                  <SectionLabel>Hobbies</SectionLabel>
                   <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 12,
-                      flex: 1,
-                      justifyContent: "center",
-                    }}>
-                    {[
-                      { label: "React", pct: 92 },
-                      { label: "Next.js", pct: 88 },
-                      { label: "Tailwind", pct: 95 },
-                      { label: "TypeScript", pct: 80 },
-                    ].map((s, i) => (
-                      <SkillBar
-                        key={s.label}
-                        label={s.label}
-                        pct={s.pct}
-                        delay={i * 0.09}
-                        dark={dark}
-                      />
-                    ))}
-                  </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      flexWrap: "wrap",
-                      gap: 6,
-                      marginTop: 14,
-                      flexShrink: 0,
-                    }}>
-                    {["Framer", "Radix UI", "Tags"].map((t) => (
-                      <span
-                        key={t}
-                        style={{
-                          fontSize: 9,
-                          padding: "3px 9px",
-                          borderRadius: 99,
-                          fontWeight: 600,
-                          letterSpacing: "0.1em",
-                          background: "rgba(59,130,246,0.1)",
-                          border: "1px solid rgba(59,130,246,0.2)",
-                          color: "#93c5fd",
-                        }}>
-                        {t}
-                      </span>
-                    ))}
+                    className="custom-scroll"
+                    style={{ overflowY: "auto", flex: 1, paddingRight: 6 }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 12,
+                      }}>
+                      {[
+                        {
+                          icon: "📸",
+                          label: "Photography",
+                          sub: "Short captions, filmography",
+                        },
+                        {
+                          icon: "🥾",
+                          label: "Hiking",
+                          sub: "Hiking and the great outdoors",
+                        },
+                      ].map((h) => (
+                        <motion.div
+                          key={h.label}
+                          whileHover={{
+                            x: 4,
+                            transition: { type: "spring", stiffness: 300 },
+                          }}
+                          style={{
+                            display: "flex",
+                            alignItems: "flex-start",
+                            gap: 10,
+                          }}>
+                          <IconBox icon={h.icon} />
+                          <div>
+                            <p
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 600,
+                                color: txt,
+                                margin: "0 0 2px",
+                              }}>
+                              {h.label}
+                            </p>
+                            <p
+                              style={{
+                                fontSize: 9,
+                                color: muted,
+                                margin: 0,
+                                lineHeight: 1.45,
+                              }}>
+                              {h.sub}
+                            </p>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
                   </div>
                 </Card>
               </div>
@@ -547,77 +589,110 @@ const About = () => {
               </div>
             </ScatterCard>
 
-            {/* ── HOBBIES ── */}
+            {/* ── Skills / ADDRESS / CONTACT ── */}
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "1fr 1fr 1fr",
+                gridTemplateColumns: "minmax(0, 3fr) minmax(0, 2fr)",
                 gap: 18,
-                alignItems: "start",
+                alignItems: "stretch",
               }}>
+              {/* LEFT 60% — SKILLS */}
               <ScatterCard
-                scatterKey="hobbies"
+                scatterKey="skills"
                 scrollProgress={adjustedProgress}>
-                {/* HOBBIES */}
-                <div ref={hobbyR.ref}>
+                <div ref={skillsR.ref}>
                   <Card
                     variants={fadeLeft(0.1)}
-                    animate={hobbyR.controls}
+                    animate={skillsR.controls}
                     style={{
                       padding: "18px 16px",
                       height: 230,
                       display: "flex",
                       flexDirection: "column",
                     }}>
-                    <SectionLabel>Hobbies</SectionLabel>
-
+                    <SectionLabel>Skills</SectionLabel>
                     <div
-                      className="custom-scroll"
                       style={{
-                        overflowY: "auto",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 12,
                         flex: 1,
-                        paddingRight: 6,
+                        justifyContent: "center",
                       }}>
+                      {[
+                        { label: "React", pct: 92 },
+                        { label: "Next.js", pct: 88 },
+                        { label: "Tailwind", pct: 95 },
+                        { label: "TypeScript", pct: 80 },
+                      ].map((s, i) => (
+                        <SkillBar
+                          key={s.label}
+                          label={s.label}
+                          pct={s.pct}
+                          delay={i * 0.09}
+                          dark={dark}
+                        />
+                      ))}
+                    </div>
+                  </Card>
+                </div>
+              </ScatterCard>
+
+              {/* RIGHT 40% — ADDRESS + CONTACT stacked */}
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 18,
+                  height: 230,
+                  minWidth: 0,
+                }}>
+                {/* ADDRESS */}
+                <ScatterCard
+                  scatterKey="address"
+                  scrollProgress={adjustedProgress}
+                  style={{
+                    flex: 0.9,
+                    minHeight: 0,
+                    display: "flex",
+                    flexDirection: "column",
+                  }}>
+                  <div
+                    ref={addrR.ref}
+                    style={{
+                      flex: 1,
+                      minHeight: 0,
+                      display: "flex",
+                      flexDirection: "column",
+                    }}>
+                    <Card
+                      variants={fadeLeft(0.1)}
+                      animate={addrR.controls}
+                      style={{
+                        flex: 1,
+                        padding: "14px 16px",
+                        display: "flex",
+                        flexDirection: "column",
+                        overflow: "hidden",
+                      }}>
+                      <SectionLabel>Address</SectionLabel>
                       <div
-                        style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: 12,
-                        }}>
-                        {[
-                          {
-                            icon: "📸",
-                            label: "Photography",
-                            sub: "Short captions, filmography",
-                          },
-                          {
-                            icon: "🥾",
-                            label: "Hiking",
-                            sub: "Hiking and the great outdoors",
-                          },
-                          {
-                            icon: "📚",
-                            label: "Reading",
-                            sub: "Reading and collecting books",
-                          },
-                          {
-                            icon: "🎨",
-                            label: "Painting",
-                            sub: "Painting, printing and inking",
-                          },
-                        ].map((h) => (
-                          <motion.div
-                            key={h.label}
-                            whileHover={{
-                              x: 4,
-                              transition: { type: "spring", stiffness: 300 },
-                            }}
+                        className="custom-scroll"
+                        style={{ overflowY: "auto", flex: 1 }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 8,
+                          }}>
+                          <div
                             style={{
                               display: "flex",
                               alignItems: "flex-start",
                               gap: 10,
                             }}>
-                            <IconBox icon={h.icon} />
+                            <IconBox icon="📍" />
                             <div>
                               <p
                                 style={{
@@ -626,174 +701,96 @@ const About = () => {
                                   color: txt,
                                   margin: "0 0 2px",
                                 }}>
-                                {h.label}
+                                123 Design Street
                               </p>
                               <p
                                 style={{
-                                  fontSize: 9,
+                                  fontSize: 10,
                                   color: muted,
                                   margin: 0,
-                                  lineHeight: 1.45,
                                 }}>
-                                {h.sub}
+                                Creative City, 90210
                               </p>
                             </div>
-                          </motion.div>
-                        ))}
-                      </div>
-                    </div>
-                  </Card>
-                </div>
-              </ScatterCard>
-              <ScatterCard
-                scatterKey="address"
-                scrollProgress={adjustedProgress}>
-                {/* ADDRESS */}
-                <div ref={addrR.ref}>
-                  <Card
-                    variants={fadeLeft(0.1)}
-                    animate={addrR.controls}
-                    style={{
-                      padding: "18px 16px",
-                      height: 230,
-                      display: "flex",
-                      flexDirection: "column",
-                    }}>
-                    <SectionLabel>Address</SectionLabel>
-
-                    <div
-                      className="custom-scroll"
-                      style={{
-                        overflowY: "auto",
-                        flex: 1,
-                        paddingRight: 6,
-                      }}>
-                      <div
-                        style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: 10,
-                        }}>
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "flex-start",
-                            gap: 10,
-                          }}>
-                          <IconBox icon="📍" />
-                          <div>
-                            <p
-                              style={{
-                                fontSize: 11,
-                                fontWeight: 600,
-                                color: txt,
-                                margin: "0 0 2px",
-                              }}>
-                              123 Design Street
-                            </p>
-                            <p
-                              style={{ fontSize: 10, color: muted, margin: 0 }}>
-                              Creative City, 90210
-                            </p>
                           </div>
                         </div>
-
-                        {[
-                          { label: "Timezone", val: "IST / UTC +5:30" },
-                          { label: "Country", val: "India 🇮🇳" },
-                        ].map((r) => (
-                          <div
-                            key={r.label}
-                            style={{
-                              padding: "9px 11px",
-                              borderRadius: 10,
-                              background: "rgba(255,255,255,0.03)",
-                              border: "1px solid rgba(255,255,255,0.06)",
-                            }}>
-                            <p
-                              style={{
-                                fontSize: 9,
-                                fontWeight: 600,
-                                letterSpacing: "0.14em",
-                                textTransform: "uppercase",
-                                color: muted,
-                                margin: "0 0 3px",
-                              }}>
-                              {r.label}
-                            </p>
-                            <p
-                              style={{
-                                fontSize: 11,
-                                fontWeight: 700,
-                                fontFamily: "var(--font-primary)",
-                                color: "var(--color-accent)",
-                                margin: 0,
-                              }}>
-                              {r.val}
-                            </p>
-                          </div>
-                        ))}
                       </div>
-                    </div>
-                  </Card>
-                </div>
-              </ScatterCard>
-              <ScatterCard
-                scatterKey="contact"
-                scrollProgress={adjustedProgress}>
+                    </Card>
+                  </div>
+                </ScatterCard>
+
                 {/* CONTACT */}
-                <div ref={contactR.ref}>
-                  <Card
-                    variants={fadeLeft(0.1)}
-                    animate={contactR.controls}
+                <ScatterCard
+                  scatterKey="contact"
+                  scrollProgress={adjustedProgress}
+                  style={{
+                    flex: 1.1,
+                    minHeight: 0,
+                    display: "flex",
+                    flexDirection: "column",
+                  }}>
+                  <div
+                    ref={contactR.ref}
                     style={{
-                      padding: "18px 16px",
-                      height: 230,
+                      flex: 1,
+                      minHeight: 0,
                       display: "flex",
                       flexDirection: "column",
                     }}>
-                    <SectionLabel>Contact Info</SectionLabel>
-
-                    <div
-                      className="custom-scroll"
+                    <Card
+                      variants={fadeLeft(0.1)}
+                      animate={contactR.controls}
                       style={{
-                        overflowY: "auto",
                         flex: 1,
-                        paddingRight: 6,
+                        padding: "14px 16px",
+                        display: "flex",
+                        flexDirection: "column",
+                        overflow: "hidden",
                       }}>
-                      <div
-                        style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: 11,
-                        }}>
-                        {[
-                          {
-                            icon: "✉️",
-                            label: "Email",
-                            val: "alex@rivers.dev",
-                          },
-                          {
-                            icon: "📞",
-                            label: "Phone",
-                            val: "+1 (555) 000-0000",
-                          },
-                          { icon: "🐦", label: "Twitter", val: "@alexrivers" },
-                          { icon: "📸", label: "Instagram", val: "@alex.dev" },
-                        ].map((c) => (
-                          <motion.div
-                            key={c.label}
-                            whileHover={{
-                              x: 4,
-                              transition: { type: "spring", stiffness: 300 },
-                            }}
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 10,
-                            }}>
-                            <IconBox icon={c.icon} />
-                            <div>
+                      <SectionLabel>Contact Info</SectionLabel>
+                      <div className="custom-scroll" style={{ flex: 1 }}>
+                        <div
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "repeat(3, 1fr)",
+                            gap: 12,
+                          }}>
+                          {[
+                            {
+                              icon: "✉️",
+                              label: "Email",
+                              val: "alex@rivers.dev",
+                            },
+                            {
+                              icon: "📞",
+                              label: "Phone",
+                              val: "+1 (555) 000-0000",
+                            },
+                            {
+                              icon: "💼",
+                              label: "LinkedIn",
+                              val: "linkedin.com/in/alexrivers",
+                            },
+                          ].map((c) => (
+                            <motion.div
+                              key={c.label}
+                              whileHover={{
+                                y: -3,
+                                transition: { type: "spring", stiffness: 300 },
+                              }}
+                              style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                gap: 2,
+                                padding: 4,
+                                cursor: "pointer",
+                              }}
+                              title={c.val} // ✅ tooltip
+                            >
+                              <IconBox icon={c.icon} />
+
                               <p
                                 style={{
                                   fontSize: 9,
@@ -802,26 +799,19 @@ const About = () => {
                                   textTransform: "uppercase",
                                   color: muted,
                                   margin: 0,
+                                  textAlign: "center",
                                 }}>
                                 {c.label}
                               </p>
-                              <p
-                                style={{
-                                  fontSize: 10,
-                                  fontWeight: 500,
-                                  color: txt,
-                                  margin: "2px 0 0",
-                                }}>
-                                {c.val}
-                              </p>
-                            </div>
-                          </motion.div>
-                        ))}
+                            </motion.div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  </Card>
-                </div>
-              </ScatterCard>
+                    </Card>
+                  </div>
+                </ScatterCard>
+              </div>
+              {/* end RIGHT 40% */}
             </div>
 
             {/* end bottom grid */}
