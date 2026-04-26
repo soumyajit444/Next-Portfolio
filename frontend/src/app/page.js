@@ -9,6 +9,7 @@ import About from "@/components/sections/About";
 import Skills from "@/components/sections/Skills";
 import Experience from "@/components/sections/Experience";
 import Contact from "@/components/sections/Contact";
+import LoadingScreen from "@/components/animations/LoadingScreen";
 
 gsap.registerPlugin(ScrollTrigger, Observer);
 
@@ -17,8 +18,10 @@ const sections = [Hero, About, Skills, Experience, Contact];
 export default function Page() {
   const wrapperRef = useRef(null);
   const [heroScrollProgress, setHeroScrollProgress] = useState(0);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
+    if (!loaded) return;
     const wrapper = wrapperRef.current;
     if (!wrapper) return;
 
@@ -54,10 +57,13 @@ export default function Page() {
     }, wrapper); // scope context to wrapper
 
     return () => ctx.revert(); // cleanly removes all GSAP, avoids DOM conflict
-  }, []);
+  }, [loaded]);
 
   return (
     <div style={{ overflowX: "hidden", position: "relative" }}>
+      {!loaded && (
+        <LoadingScreen onComplete={() => setLoaded(true)} /> // ← ADD
+      )}
       {/* CONTENT */}
       <div
         ref={wrapperRef}
