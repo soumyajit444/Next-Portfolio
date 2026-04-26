@@ -256,14 +256,13 @@ function ExperienceCard({ exp, cardRef }) {
           : { right: "calc(50% + 28px)" }),
         height: 300,
         width: 500,
-        background: "rgba(255,255,255,0.72)",
+        background: "var(--glass-bg)",
         backdropFilter: "blur(14px)",
         WebkitBackdropFilter: "blur(14px)",
-        border: "1px solid rgba(168,85,247,0.18)",
+        border: "1px solid rgba(169, 169, 169, 0.61)",
         borderRadius: "16px",
         padding: "22px 24px",
-        boxShadow:
-          "0 8px 32px rgba(124,58,237,0.10), 0 2px 8px rgba(124,58,237,0.08)",
+        boxShadow: "var(--card-shadow)",
         opacity: 0,
         transform: isRight
           ? "translateY(12px) translateX(16px)"
@@ -279,7 +278,7 @@ function ExperienceCard({ exp, cardRef }) {
         style={{
           fontSize: "17px",
           fontWeight: 700,
-          color: "#3b0764",
+          color: "var(--color-text-muted)",
           marginBottom: "2px",
           lineHeight: 1.2,
         }}>
@@ -322,7 +321,7 @@ function ExperienceCard({ exp, cardRef }) {
       <div
         style={{
           fontSize: "13.5px",
-          color: "#4b5563",
+          color: "var(--color-text)",
           lineHeight: 1.65,
           marginBottom: "14px",
         }}>
