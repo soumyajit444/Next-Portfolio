@@ -69,7 +69,7 @@ export default function Header() {
             justifyContent: "space-between",
             pointerEvents: "auto",
             width: "100%",
-            maxWidth: scrolled ? 600 : 1400,
+            maxWidth: scrolled ? 600 : 1440,
             padding: "8px 18px",
             borderRadius: "2rem",
             gap: "24px",
@@ -94,11 +94,11 @@ export default function Header() {
             href="/"
             style={{
               color: "var(--color-text)",
-              fontWeight: "700",
-              fontSize: "14px",
+              fontWeight: scrolled ? "700" : "100",
+              fontSize: scrolled ? "1rem" : "2rem",
               letterSpacing: "-0.02em",
               textDecoration: "none",
-              fontFamily: "'DM Mono', 'Courier New', monospace",
+              fontFamily: "var(--font-primary)",
               flexShrink: 0,
               transition: "opacity 0.2s",
             }}
