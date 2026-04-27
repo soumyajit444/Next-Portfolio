@@ -22,7 +22,7 @@ const EXPERIENCES = [
       "Built and shipped a design system used across 12 product teams. Led migration from class components to hooks, reducing bundle size by 34% and improving Lighthouse scores by 20 points.",
     tags: ["React", "TypeScript", "Figma"],
     // node sits at 25% of the timeline height
-    nodeAt: 0.1,
+    nodeAt: 0.13,
   },
   {
     id: 1,
@@ -135,7 +135,7 @@ function ProgressLine() {
         alignItems: "center",
         justifyContent: "flex-start",
         pointerEvents: "none",
-        zIndex: 9999,
+        zIndex: 999,
         opacity: 0,
         transition: "opacity 0.3s ease",
       }}>
@@ -254,7 +254,7 @@ function ExperienceCard({ exp, cardRef }) {
         ...(isRight
           ? { left: "calc(50% + 28px)" }
           : { right: "calc(50% + 28px)" }),
-        height: 300,
+        height: 280,
         width: 500,
         background: "var(--glass-bg)",
         backdropFilter: "blur(14px)",

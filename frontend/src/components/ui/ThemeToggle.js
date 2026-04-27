@@ -3,27 +3,24 @@
 import { useEffect, useState } from "react";
 
 export default function ThemeToggle() {
-  const [theme, setTheme] = useState("light");
+  const [theme, setTheme] = useState("dark");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-
-    const savedTheme =
+    const saved =
       localStorage.getItem("theme") ||
       document.documentElement.getAttribute("data-theme") ||
-      "light";
-
-    setTheme(savedTheme);
-    document.documentElement.setAttribute("data-theme", savedTheme);
+      "dark";
+    setTheme(saved);
+    document.documentElement.setAttribute("data-theme", saved);
   }, []);
 
-  const toggleTheme = () => {
-    const newTheme = theme === "light" ? "dark" : "light";
-
-    setTheme(newTheme);
-    document.documentElement.setAttribute("data-theme", newTheme);
-    localStorage.setItem("theme", newTheme);
+  const toggle = () => {
+    const next = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    document.documentElement.setAttribute("data-theme", next);
+    localStorage.setItem("theme", next);
   };
 
   if (!mounted) return null;
@@ -31,24 +28,72 @@ export default function ThemeToggle() {
   const isDark = theme === "dark";
 
   return (
-    <div className="fixed top-6 right-6 z-50">
-      <button
-        onClick={toggleTheme}
-        className="relative w-20 h-10 rounded-full flex items-center px-1 transition-all duration-300 shadow-md"
-        style={{
-          background: isDark ? "#2a2a2a" : "#e5e5e5",
-        }}>
-        {/* ICONS */}
-        <div className="absolute left-3 text-sm">🌙</div>
-        <div className="absolute right-3 text-sm">☀️</div>
+    <button
+      onClick={toggle}
+      aria-label="Toggle theme"
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "6px",
+        padding: "6px 13px 6px 10px",
+        borderRadius: "1rem",
 
-        {/* TOGGLE KNOB */}
-        <div
-          className={`w-8 h-8 rounded-full bg-white shadow-md transform transition-all duration-300 ${
-            isDark ? "translate-x-12" : "translate-x-0"
-          }`}
-        />
-      </button>
-    </div>
+        color: "var(--color-text)", // ✅ Fixed: was "--color-text"
+        fontSize: "11px",
+        fontWeight: "600",
+        letterSpacing: "0.09em",
+        cursor: "pointer",
+        fontFamily: "inherit",
+        whiteSpace: "nowrap",
+        transition: "background 0.2s, border-color 0.2s",
+        lineHeight: 1,
+      }}
+      onMouseEnter={(e) =>
+        (e.currentTarget.style.background =
+          "color-mix(in srgb, var(--color-text) 10%, transparent)")
+      }
+      onMouseLeave={(e) =>
+        (e.currentTarget.style.background = "var(--color-bg)")
+      }>
+      {isDark ? <MoonIcon /> : <SunIcon />}{" "}
+      {/* ✅ Icon matches current theme */}
+      {isDark ? "DARK" : "LIGHT"} {/* ✅ Label matches current theme */}
+    </button>
+  );
+}
+
+function SunIcon() {
+  return (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round">
+      <circle cx="12" cy="12" r="4" />
+      <line x1="12" y1="2" x2="12" y2="5" />
+      <line x1="12" y1="19" x2="12" y2="22" />
+      <line x1="4.22" y1="4.22" x2="6.34" y2="6.34" />
+      <line x1="17.66" y1="17.66" x2="19.78" y2="19.78" />
+      <line x1="2" y1="12" x2="5" y2="12" />
+      <line x1="19" y1="12" x2="22" y2="12" />
+      <line x1="4.22" y1="19.78" x2="6.34" y2="17.66" />
+      <line x1="17.66" y1="6.34" x2="19.78" y2="4.22" />
+    </svg>
+  );
+}
+
+function MoonIcon() {
+  return (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      stroke="none">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+    </svg>
   );
 }

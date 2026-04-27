@@ -10,10 +10,17 @@ import Skills from "@/components/sections/Skills";
 import Experience from "@/components/sections/Experience";
 import Contact from "@/components/sections/Contact";
 import LoadingScreen from "@/components/animations/LoadingScreen";
+import { ScrollToPlugin } from "gsap/ScrollToPlugin";
 
-gsap.registerPlugin(ScrollTrigger, Observer);
+gsap.registerPlugin(ScrollToPlugin, ScrollTrigger, Observer);
 
-const sections = [Hero, About, Skills, Experience, Contact];
+const sections = [
+  { Component: Hero, id: "home" },
+  { Component: About, id: "about" },
+  { Component: Skills, id: "skills" },
+  { Component: Experience, id: "experience" },
+  { Component: Contact, id: "contact" },
+];
 
 export default function Page() {
   const wrapperRef = useRef(null);
@@ -36,11 +43,11 @@ export default function Page() {
           trigger: wrapper,
           pin: wrapper, // pin the wrapper, not a parent React manages
           scrub: 1,
-          snap: {
-            snapTo: 1 / (sectionEls.length - 1),
-            duration: { min: 0.3, max: 0.6 },
-            ease: "power2.inOut",
-          },
+          // snap: {
+          //   snapTo: 1 / (sectionEls.length - 1),
+          //   duration: { min: 0.3, max: 0.6 },
+          //   ease: "power2.inOut",
+          // },
           end: () => `+=${wrapper.offsetWidth}`,
           onUpdate: (self) => {
             const progress = Math.min(self.progress * sectionEls.length, 1);
@@ -52,6 +59,18 @@ export default function Page() {
           },
         },
       });
+
+      window.scrollToSection = (index) => {
+        const totalSections = sectionEls.length - 1;
+
+        gsap.to(window, {
+          scrollTo: {
+            y: (wrapper.offsetWidth / totalSections) * index,
+          },
+          duration: 1,
+          ease: "power2.inOut",
+        });
+      };
 
       return () => tween.kill();
     }, wrapper); // scope context to wrapper
@@ -73,9 +92,10 @@ export default function Page() {
           width: `${sections.length * 100}vw`,
           height: "100vh",
         }}>
-        {sections.map((Section, i) => (
+        {sections.map(({ Component, id }, i) => (
           <div
             key={i}
+            id={id}
             className="h-section"
             style={{
               width: "100vw",
@@ -88,7 +108,7 @@ export default function Page() {
             {i === 0 ? (
               <Hero scrollProgress={heroScrollProgress} />
             ) : (
-              <Section />
+              <Component />
             )}
           </div>
         ))}

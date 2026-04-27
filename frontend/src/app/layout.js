@@ -4,6 +4,7 @@ import { Toaster } from "sonner";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import Background from "@/components/animations/Background";
 import SplashCursor from "@/components/animations/SplashCursor";
+import Header from "@/components/layout/Header";
 
 const workSans = Work_Sans({
   subsets: ["latin"],
@@ -16,7 +17,8 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className={workSans.variable} data-theme="light">
       <body suppressHydrationWarning>
-        <ThemeToggle />
+        {/* <ThemeToggle /> */}
+        <Header />
 
         <Background />
         {/* Cursor effect */}
