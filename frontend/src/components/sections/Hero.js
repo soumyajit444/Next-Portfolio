@@ -79,7 +79,7 @@ export default function Hero({ scrollProgress = 0 }) {
             display: "flex",
             alignItems: "center",
             gap: "12px",
-            marginBottom: "2.5rem",
+            marginBottom: "2rem",
           }}>
           <span
             style={{

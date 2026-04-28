@@ -9,6 +9,8 @@
   --glass-bg: rgba(239, 239, 239, 0.94);
   --card-shadow:
     0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  --header-bg: rgba(255, 255, 255, 0.72);
+  --header-border: rgba(255, 255, 255, 0.08);
 }
 
 /* DARK MODE */
@@ -19,6 +21,8 @@
   --color-text-muted: #b0b0b0;
   --color-border: #444444;
   --color-accent: #888888;
-  --glass-bg: rgba(15, 20, 35, 0.9);
+  --glass-bg: rgba(15, 15, 15, 0.87);
   --card-shadow: none;
+  --header-bg: rgba(8, 8, 10, 0.78);
+  --header-border: rgba(255, 255, 255, 0.07);
 }
