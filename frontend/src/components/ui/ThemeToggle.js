@@ -37,27 +37,28 @@ export default function ThemeToggle() {
         gap: "6px",
         padding: "6px 13px 6px 10px",
         borderRadius: "1rem",
-
-        color: "var(--color-text)", // ✅ Fixed: was "--color-text"
+        background: "transparent",
+        color: "var(--color-text)",
         fontSize: "11px",
         fontWeight: "600",
         letterSpacing: "0.09em",
         cursor: "pointer",
         fontFamily: "inherit",
         whiteSpace: "nowrap",
-        transition: "background 0.2s, border-color 0.2s",
+        border: "none",
+        transition: "background 0.2s, color 0.2s",
         lineHeight: 1,
       }}
-      onMouseEnter={(e) =>
-        (e.currentTarget.style.background =
-          "color-mix(in srgb, var(--color-text) 10%, transparent)")
-      }
-      onMouseLeave={(e) =>
-        (e.currentTarget.style.background = "var(--color-bg)")
-      }>
-      {isDark ? <MoonIcon /> : <SunIcon />}{" "}
-      {/* ✅ Icon matches current theme */}
-      {isDark ? "DARK" : "LIGHT"} {/* ✅ Label matches current theme */}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = "var(--color-text)";
+        e.currentTarget.style.color = "var(--color-bg)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = "transparent";
+        e.currentTarget.style.color = "var(--color-text)";
+      }}>
+      {isDark ? <SunIcon /> : <MoonIcon />}
+      {isDark ? "LIGHT" : "DARK"}
     </button>
   );
 }

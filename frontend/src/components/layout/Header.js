@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import ThemeToggle from "@/components/ui/ThemeToggle";
+import SoundToggle from "@/components/ui/SoundToggle";
 
 const navLinks = [
   { label: "HOME", index: 0, id: "home" },
@@ -17,7 +18,7 @@ export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
+    const handleScroll = () => setScrolled(window.scrollY > 40);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -69,7 +70,7 @@ export default function Header() {
             justifyContent: "space-between",
             pointerEvents: "auto",
             width: "100%",
-            maxWidth: scrolled ? 600 : 1440,
+            maxWidth: scrolled ? 700 : 1440,
             padding: "8px 18px",
             borderRadius: "2rem",
             gap: "24px",
@@ -100,7 +101,9 @@ export default function Header() {
               textDecoration: "none",
               fontFamily: "var(--font-primary)",
               flexShrink: 0,
-              transition: "opacity 0.2s",
+              // UPDATED: Added fontSize and fontWeight to transition for smooth morphing
+              transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
+              willChange: "font-size, font-weight",
             }}
             onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.55")}
             onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}>
@@ -152,10 +155,11 @@ export default function Header() {
               alignItems: "center",
               gap: "12px",
               flexShrink: 0,
-              paddingLeft: "4px",
+              paddingX: "4px",
               marginLeft: "4px",
             }}
             className="header-right">
+            <SoundToggle />
             <ThemeToggle />
           </div>
 

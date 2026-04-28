@@ -21,7 +21,6 @@ const EXPERIENCES = [
     description:
       "Built and shipped a design system used across 12 product teams. Led migration from class components to hooks, reducing bundle size by 34% and improving Lighthouse scores by 20 points.",
     tags: ["React", "TypeScript", "Figma"],
-    // node sits at 25% of the timeline height
     nodeAt: 0.13,
   },
   {
@@ -34,21 +33,25 @@ const EXPERIENCES = [
     description:
       "Architected a real-time collaboration layer for a SaaS canvas editor. Mentored a team of four engineers and drove a 2× improvement in page-load performance through edge caching and code-splitting strategies.",
     tags: ["Next.js", "WebSockets", "GSAP"],
-    // node sits at 70% of the timeline height
     nodeAt: 0.56,
   },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ProgressLine  (unchanged logic, extended with node dots + cards)
+// ProgressLine
 // ─────────────────────────────────────────────────────────────────────────────
 function ProgressLine() {
   const lineTrackRef = useRef(null);
   const lineFillRef = useRef(null);
-  // store per-experience refs in arrays
+
+  // refs for nodes, cards, AND pills
   const nodeRefs = useRef(EXPERIENCES.map(() => React.createRef()));
   const cardRefs = useRef(EXPERIENCES.map(() => React.createRef()));
+  const pillRefs = useRef(EXPERIENCES.map(() => React.createRef())); // ← NEW
+
+  // reveal state trackers
   const cardRevealedRef = useRef(EXPERIENCES.map(() => false));
+  const pillRevealedRef = useRef(EXPERIENCES.map(() => false)); // ← NEW
 
   useEffect(() => {
     const handleBgScroll = (e) => {
@@ -63,7 +66,7 @@ function ProgressLine() {
         Math.min(1, (globalProgress - SECTION_START) / SECTION_SPAN),
       );
 
-      // ── opacity envelope (identical to original) ──────────────────────────
+      // ── opacity envelope ──────────────────────────────────────────────────
       let opacity = 0;
       if (localProgress < 0.08) {
         opacity = localProgress / 0.08;
@@ -73,7 +76,7 @@ function ProgressLine() {
         opacity = 1;
       }
 
-      // ── line fill (identical to original) ────────────────────────────────
+      // ── line fill ─────────────────────────────────────────────────────────
       const growProgress = Math.max(
         0,
         Math.min(1, (localProgress - 0.08) / 0.74),
@@ -83,14 +86,16 @@ function ProgressLine() {
       lineTrack.style.opacity = opacity;
       lineFill.style.height = `${lineHeight}vh`;
 
-      // ── node + card reveal ───────────────────────────────────────────────
+      // ── node + card + pill reveal ─────────────────────────────────────────
       EXPERIENCES.forEach((exp, i) => {
         const nodeDot = nodeRefs.current[i].current;
         const card = cardRefs.current[i].current;
-        if (!nodeDot || !card) return;
+        const pill = pillRefs.current[i].current; // ← NEW
 
-        // growProgress reaches exp.nodeAt → activate
+        if (!nodeDot || !card || !pill) return;
+
         const activated = growProgress >= exp.nodeAt;
+        const pillSide = exp.side === "right" ? "left" : "right";
 
         // node dot pulse
         nodeDot.style.opacity = activated ? "1" : "0";
@@ -98,20 +103,39 @@ function ProgressLine() {
           ? "translateX(-50%) scale(1)"
           : "translateX(-50%) scale(0.4)";
 
-        // card slide-in (only trigger once)
+        // ── card slide-in ───────────────────────────────────────────────────
         if (activated && !cardRevealedRef.current[i]) {
           cardRevealedRef.current[i] = true;
           card.style.opacity = "1";
           card.style.transform = "translateY(0) translateX(0)";
         }
         if (!activated && cardRevealedRef.current[i]) {
-          // allow re-hiding if user scrolls back up
           cardRevealedRef.current[i] = false;
           card.style.opacity = "0";
           card.style.transform =
             exp.side === "right"
               ? "translateY(12px) translateX(16px)"
               : "translateY(12px) translateX(-16px)";
+        }
+
+        // ── pill slide-in (SYNCED with card) ────────────────────────────────
+        if (activated && !pillRevealedRef.current[i]) {
+          pillRevealedRef.current[i] = true;
+          pill.style.opacity = "1";
+          pill.style.transform = "translateY(0) translateX(0)";
+          // Optional: tiny stagger for premium feel (uncomment if desired)
+          // setTimeout(() => {
+          //   pill.style.opacity = "1";
+          //   pill.style.transform = "translateY(0) translateX(0)";
+          // }, 50);
+        }
+        if (!activated && pillRevealedRef.current[i]) {
+          pillRevealedRef.current[i] = false;
+          pill.style.opacity = "0";
+          pill.style.transform =
+            pillSide === "left"
+              ? "translateY(12px) translateX(-16px)"
+              : "translateY(12px) translateX(16px)";
         }
       });
     };
@@ -139,7 +163,7 @@ function ProgressLine() {
         opacity: 0,
         transition: "opacity 0.3s ease",
       }}>
-      {/* ── Growing purple fill (identical to original) ─────────────────── */}
+      {/* ── Growing purple fill ─────────────────────────────────────────── */}
       <div
         ref={lineFillRef}
         style={{
@@ -152,7 +176,7 @@ function ProgressLine() {
             "0 0 8px rgba(168, 85, 247, 0.6), 0 0 20px rgba(168, 85, 247, 0.25)",
           position: "relative",
         }}>
-        {/* Glowing tip dot (identical to original) */}
+        {/* Glowing tip dot */}
         <div
           style={{
             position: "absolute",
@@ -169,7 +193,7 @@ function ProgressLine() {
         />
       </div>
 
-      {/* ── Experience nodes pinned at % positions along the line ────────── */}
+      {/* ── Experience nodes + pills + cards ─────────────────────────────── */}
       {EXPERIENCES.map((exp, i) => (
         <React.Fragment key={exp.id}>
           {/* Node dot on the line */}
@@ -193,8 +217,8 @@ function ProgressLine() {
             }}
           />
 
-          {/* Date pill */}
-          <DatePill exp={exp} />
+          {/* Date pill (now animated) */}
+          <DatePill exp={exp} pillRef={pillRefs.current[i]} />
 
           {/* Experience card */}
           <ExperienceCard exp={exp} cardRef={cardRefs.current[i]} />
@@ -205,15 +229,18 @@ function ProgressLine() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// DatePill — rendered via position fixed so it sits on the opposite side
+// DatePill — now accepts pillRef and has animated styles
 // ─────────────────────────────────────────────────────────────────────────────
-function DatePill({ exp }) {
-  // pill is on the SAME side as the node label (opposite card)
-  // right-side card → pill on left of center; left-side card → pill on right
+function DatePill({ exp, pillRef }) {
   const pillSide = exp.side === "right" ? "left" : "right";
+  const initialTransform =
+    pillSide === "left"
+      ? "translateY(12px) translateX(-16px)"
+      : "translateY(12px) translateX(16px)";
 
   return (
     <div
+      ref={pillRef}
       style={{
         position: "absolute",
         top: `calc(${exp.nodeAt * 100}vh - 14px)`,
@@ -231,6 +258,11 @@ function DatePill({ exp }) {
         boxShadow: "0 4px 14px rgba(124,58,237,0.45)",
         pointerEvents: "none",
         zIndex: 10000,
+        // ── Animation styles (match card) ─────────────────────────────────
+        opacity: 0,
+        transform: initialTransform,
+        transition:
+          "opacity 0.55s cubic-bezier(0.22,1,0.36,1), transform 0.55s cubic-bezier(0.22,1,0.36,1)",
       }}>
       {exp.date}
     </div>
@@ -238,7 +270,7 @@ function DatePill({ exp }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ExperienceCard
+// ExperienceCard (unchanged)
 // ─────────────────────────────────────────────────────────────────────────────
 function ExperienceCard({ exp, cardRef }) {
   const isRight = exp.side === "right";
