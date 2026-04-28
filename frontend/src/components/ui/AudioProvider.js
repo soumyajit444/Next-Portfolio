@@ -6,7 +6,7 @@ const AudioCtx = createContext(null);
 
 export function AudioProvider({ children }) {
   const audioRef = useRef(null);
-  const [muted, setMuted] = useState(false);
+  const [muted, setMuted] = useState(true);
   const [started, setStarted] = useState(false);
 
   useEffect(() => {
