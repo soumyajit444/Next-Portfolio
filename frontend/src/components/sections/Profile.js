@@ -247,7 +247,7 @@ function ScatterCard({ scatterKey, scrollProgress, children, style = {} }) {
 /* ══════════════════════════════════
    MAIN COMPONENT
 ══════════════════════════════════ */
-const About = () => {
+const Profile = () => {
   const [theme, setTheme] = useState(() => {
     if (typeof window === "undefined") return "light";
     return document.documentElement.getAttribute("data-theme") || "light";
@@ -547,7 +547,7 @@ const About = () => {
             {/* BIO */}
             <ScatterCard scatterKey="bio" scrollProgress={adjustedProgress}>
               <div ref={bioR.ref}>
-                <motion.h1
+                {/* <motion.h1
                   variants={fadeUp(0)}
                   animate={bioR.controls}
                   initial="hidden"
@@ -560,8 +560,8 @@ const About = () => {
                     margin: "0 0 14px",
                     color: txt,
                   }}>
-                  About Me
-                </motion.h1>
+                  MY PROFILE
+                </motion.h1> */}
                 <Card
                   variants={fadeRight(0.07)}
                   animate={bioR.controls}
@@ -823,4 +823,4 @@ const About = () => {
   );
 };
 
-export default About;
+export default Profile;

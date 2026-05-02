@@ -1,0 +1,212 @@
+{
+  "profiles": {
+    "soumyajit-sengupta": {
+      "profileSlug": "soumyajit-sengupta",
+      "Name": "Soumyajit Sengupta",
+      "CurrentJobRole": "Frontend Developer",
+      "Bio": "Creative and detail-oriented Frontend Developer with 3 years of hands-on experience building responsive, high-performance web applications using React.js. Passionate about crafting pixel-perfect UIs and seamless user experiences. A 2022 engineering graduate who quickly adapted to real-world product development cycles.",
+      "Skills": [
+        { "Name": "React.js", "Rating": 9 },
+        { "Name": "JavaScript (ES6+)", "Rating": 8 },
+        { "Name": "HTML5 & CSS3", "Rating": 9 },
+        { "Name": "Redux / Redux Toolkit", "Rating": 8 },
+        { "Name": "Tailwind CSS", "Rating": 8 },
+        { "Name": "TypeScript", "Rating": 7 },
+        { "Name": "REST API Integration", "Rating": 8 },
+        { "Name": "Git & GitHub", "Rating": 8 }
+      ],
+      "IndustryTools": [
+        "VS Code",
+        "Figma",
+        "Postman",
+        "Git & GitHub",
+        "Jira",
+        "Chrome DevTools",
+        "Storybook",
+        "Vercel"
+      ],
+      "YearsOfExperience": 3,
+      "Education": [
+        {
+          "PassOutYear": 2022,
+          "Degree": "B.Tech in Computer Science & Engineering",
+          "Institution": "Heritage Institute of Technology, Kolkata"
+        }
+      ],
+      "Hobbies": [
+        "UI/UX Design Exploration",
+        "Open Source Contributing",
+        "Gaming",
+        "Sketching",
+        "Blogging"
+      ],
+      "Address": {
+        "Street": "12, Ultadanga Main Road",
+        "State": "West Bengal",
+        "Pin": "700067",
+        "Country": "India"
+      },
+      "ContactInfo": {
+        "PhoneNo": "+91-9123456780",
+        "Email": "soumyajit.sengupta@example.com",
+        "LinkedIn": "https://www.linkedin.com/in/soumyajit-sengupta"
+      },
+      "Projects": [
+        {
+          "Name": "ReactCart – E-Commerce UI",
+          "Description": "A fully responsive e-commerce frontend built with React.js and Redux Toolkit, featuring product filtering, cart management, and seamless checkout flow with mock API integration.",
+          "Link": "https://github.com/soumyajit-sengupta/reactcart"
+        },
+        {
+          "Name": "DevFolio – Portfolio Builder",
+          "Description": "A dynamic portfolio generator for developers built using React and Tailwind CSS. Users fill a form and get a live rendered portfolio page with a shareable link.",
+          "Link": "https://github.com/soumyajit-sengupta/devfolio"
+        },
+        {
+          "Name": "NewsLens – News Aggregator App",
+          "Description": "A React-based news aggregator that fetches live articles via NewsAPI, supports category filtering, bookmarking, and dark mode.",
+          "Link": "https://github.com/soumyajit-sengupta/newslens"
+        }
+      ],
+      "WorkExperience": {
+        "Exp1": {
+          "CompanyName": "Capgemini",
+          "Role": "Associate Software Engineer – Frontend",
+          "StartDate": "2022-08-01",
+          "EndDate": "2023-10-31",
+          "Description": "Worked on enterprise-level React.js applications for a European banking client. Responsible for building reusable UI components, integrating REST APIs, and ensuring cross-browser compatibility.",
+          "WorkLocation": "Kolkata, West Bengal, India",
+          "KeySkills": [
+            "React.js",
+            "JavaScript",
+            "HTML5",
+            "CSS3",
+            "REST API Integration",
+            "Agile / Scrum"
+          ]
+        },
+        "Exp2": {
+          "CompanyName": "VyturrTech",
+          "Role": "Frontend Developer",
+          "StartDate": "2023-11-01",
+          "EndDate": "Present",
+          "Description": "Leading frontend development for a SaaS-based HR platform. Architecting scalable React component libraries, implementing Redux state management, and collaborating closely with UI/UX designers and backend teams.",
+          "WorkLocation": "Remote",
+          "KeySkills": [
+            "React.js",
+            "Redux Toolkit",
+            "TypeScript",
+            "Tailwind CSS",
+            "Storybook",
+            "Figma Handoff"
+          ]
+        }
+      }
+    },
+
+    "subhrojoti-nag": {
+      "profileSlug": "subhrojoti-nag",
+      "Name": "Subhrojoti Nag",
+      "CurrentJobRole": "Full Stack Developer (MERN)",
+      "Bio": "Enthusiastic and self-driven MERN Stack Developer with 2 years of professional experience building end-to-end web applications. A 2022 graduate with a strong foundation in both frontend and backend technologies, comfortable working across the entire development lifecycle from database design to deploying production-ready apps.",
+      "Skills": [
+        { "Name": "MongoDB", "Rating": 8 },
+        { "Name": "Express.js", "Rating": 8 },
+        { "Name": "React.js", "Rating": 8 },
+        { "Name": "Node.js", "Rating": 9 },
+        { "Name": "JavaScript (ES6+)", "Rating": 9 },
+        { "Name": "REST API Development", "Rating": 8 },
+        { "Name": "JWT & Authentication", "Rating": 7 },
+        { "Name": "Git & GitHub", "Rating": 8 }
+      ],
+      "IndustryTools": [
+        "VS Code",
+        "MongoDB Compass",
+        "Postman",
+        "Git & GitHub",
+        "Render",
+        "Netlify",
+        "Jira",
+        "Slack"
+      ],
+      "YearsOfExperience": 2,
+      "Education": [
+        {
+          "PassOutYear": 2022,
+          "Degree": "B.Tech in Information Technology",
+          "Institution": "Jadavpur University, Kolkata"
+        }
+      ],
+      "Hobbies": [
+        "Competitive Programming",
+        "Tech Podcast Listening",
+        "Cricket",
+        "Travelling",
+        "Open Source Contributing"
+      ],
+      "Address": {
+        "Street": "8, Ballygunge Place",
+        "State": "West Bengal",
+        "Pin": "700019",
+        "Country": "India"
+      },
+      "ContactInfo": {
+        "PhoneNo": "+91-9876012345",
+        "Email": "subhrojoti.nag@example.com",
+        "LinkedIn": "https://www.linkedin.com/in/subhrojoti-nag"
+      },
+      "Projects": [
+        {
+          "Name": "JobNest – Job Portal Platform",
+          "Description": "A full-stack MERN job portal where employers can post jobs and candidates can apply. Features include JWT-based auth, role-based dashboards, resume upload, and real-time application status tracking.",
+          "Link": "https://github.com/subhrojoti-nag/jobnest"
+        },
+        {
+          "Name": "ChatSphere – Real-Time Chat App",
+          "Description": "A real-time chat application built with MERN stack and Socket.io. Supports private messaging, group rooms, online status indicators, and message read receipts.",
+          "Link": "https://github.com/subhrojoti-nag/chatsphere"
+        },
+        {
+          "Name": "ExpenseTracker API",
+          "Description": "A RESTful backend API built with Node.js, Express.js, and MongoDB for tracking personal expenses. Includes category-wise filtering, monthly summaries, and secure JWT authentication.",
+          "Link": "https://github.com/subhrojoti-nag/expensetracker-api"
+        }
+      ],
+      "WorkExperience": {
+        "Exp1": {
+          "CompanyName": "AlmaBetter",
+          "Role": "Full Stack Developer Intern → Junior Developer",
+          "StartDate": "2022-07-01",
+          "EndDate": "2023-06-30",
+          "Description": "Started as a Full Stack Intern and transitioned to a Junior Developer role. Built and maintained learning management system (LMS) features using MERN stack, developed backend APIs, and contributed to student-facing dashboards.",
+          "WorkLocation": "Bengaluru, Karnataka, India (Hybrid)",
+          "KeySkills": [
+            "MongoDB",
+            "Express.js",
+            "React.js",
+            "Node.js",
+            "REST APIs",
+            "JWT Authentication"
+          ]
+        },
+        "Exp2": {
+          "CompanyName": "Genpact",
+          "Role": "Software Developer – Full Stack",
+          "StartDate": "2023-07-01",
+          "EndDate": "Present",
+          "Description": "Working on internal enterprise tools and client-facing web portals using MERN stack. Responsible for API development, MongoDB schema design, React frontend integration, and performance optimization of existing services.",
+          "WorkLocation": "Kolkata, West Bengal, India",
+          "KeySkills": [
+            "Node.js",
+            "Express.js",
+            "MongoDB",
+            "React.js",
+            "JavaScript",
+            "Agile / Scrum",
+            "Performance Optimization"
+          ]
+        }
+      }
+    }
+  }
+}

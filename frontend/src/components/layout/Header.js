@@ -7,9 +7,9 @@ import SoundToggle from "@/components/ui/SoundToggle";
 
 const navLinks = [
   { label: "HOME", index: 0, id: "home" },
-  { label: "ABOUT", index: 1, id: "about" },
+  { label: "PROFILE", index: 1, id: "profile" },
   { label: "SKILLS", index: 2, id: "skills" },
-  { label: "WORK", index: 3, id: "experience" },
+  { label: "EXPERIENCE", index: 3, id: "experience" },
   { label: "CONTACT", index: 4, id: "contact" },
 ];
 

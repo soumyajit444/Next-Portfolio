@@ -4,8 +4,8 @@ import { useRef, useEffect, useState } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Observer } from "gsap/Observer";
-import Hero from "@/components/sections/Hero";
-import About from "@/components/sections/About";
+import Home from "@/components/sections/Home";
+import Profile from "@/components/sections/Profile";
 import Skills from "@/components/sections/Skills";
 import Experience from "@/components/sections/Experience";
 import Contact from "@/components/sections/Contact";
@@ -15,8 +15,8 @@ import { ScrollToPlugin } from "gsap/ScrollToPlugin";
 gsap.registerPlugin(ScrollToPlugin, ScrollTrigger, Observer);
 
 const sections = [
-  { Component: Hero, id: "home" },
-  { Component: About, id: "about" },
+  { Component: Home, id: "home" },
+  { Component: Profile, id: "profile" },
   { Component: Skills, id: "skills" },
   { Component: Experience, id: "experience" },
   { Component: Contact, id: "contact" },
@@ -106,7 +106,7 @@ export default function Page() {
               zIndex: i === 0 ? 0 : i,
             }}>
             {i === 0 ? (
-              <Hero scrollProgress={heroScrollProgress} />
+              <Home scrollProgress={heroScrollProgress} />
             ) : (
               <Component />
             )}

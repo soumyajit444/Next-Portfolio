@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useState, useRef } from "react";
+import Marquee from "react-fast-marquee"; // Import the library
 
 const Spline = dynamic(() => import("@splinetool/react-spline"), {
   ssr: false,
@@ -12,7 +13,7 @@ const Spline = dynamic(() => import("@splinetool/react-spline"), {
   ),
 });
 
-export default function Hero({ scrollProgress = 0 }) {
+export default function Home({ scrollProgress = 0 }) {
   const [mounted, setMounted] = useState(false);
   const [theme, setTheme] = useState("light");
   const [splineError, setSplineError] = useState(false);
@@ -39,7 +40,6 @@ export default function Hero({ scrollProgress = 0 }) {
     return () => observer.disconnect();
   }, []);
 
-  // Drive scale from scrollProgress: 1 → 1.35 as user scrolls away from Hero
   useEffect(() => {
     if (!splineContainerRef.current) return;
     const scale = 1 + scrollProgress * 0.3;
@@ -51,6 +51,18 @@ export default function Hero({ scrollProgress = 0 }) {
   const LIGHT_SCENE = "/light-chips.spline";
   const DARK_SCENE = "/dark-chips.spline";
   const scene = theme === "dark" ? DARK_SCENE : LIGHT_SCENE;
+
+  const skills = [
+    "React",
+    "Next.js",
+    "TypeScript",
+    "Redux Toolkit",
+    "Tailwind",
+    "Git",
+    "Node.js",
+    "GraphQL",
+    "Framer Motion",
+  ];
 
   return (
     <section
@@ -137,36 +149,37 @@ export default function Hero({ scrollProgress = 0 }) {
           modern UI/UX, clean architecture, and efficient state management.
         </p>
 
-        {/* Tech */}
+        {/* Tech Marquee */}
         <div
           style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "8px",
             marginBottom: "3rem",
+            width: "100%",
+            overflow: "hidden", // Ensures marquee stays within bounds
           }}>
-          {[
-            "React",
-            "Next.js",
-            "TypeScript",
-            "Redux Toolkit",
-            "Tailwind",
-            "Git",
-          ].map((tech) => (
-            <span
-              key={tech}
-              style={{
-                fontSize: "11px",
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-                padding: "6px 14px",
-                border: "0.5px solid var(--color-border)",
-                color: "var(--color-accent)",
-                borderRadius: "2px",
-              }}>
-              {tech}
-            </span>
-          ))}
+          <Marquee
+            gradient={false} // Disabled gradient to match your clean border style
+            speed={40}
+            pauseOnHover={true}
+            direction="right" // Sliding towards right as requested
+            className="flex items-center">
+            {skills.map((tech, index) => (
+              <span
+                key={`${tech}-${index}`}
+                style={{
+                  fontSize: "11px",
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase",
+                  padding: "6px 14px",
+                  border: "0.5px solid var(--color-border)",
+                  color: "var(--color-accent)",
+                  borderRadius: "2px",
+                  marginRight: "12px", // Spacing between items in marquee
+                  display: "inline-block",
+                }}>
+                {tech}
+              </span>
+            ))}
+          </Marquee>
         </div>
 
         {/* Buttons */}
