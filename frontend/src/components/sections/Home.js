@@ -2,7 +2,8 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useState, useRef } from "react";
-import Marquee from "react-fast-marquee"; // Import the library
+import Marquee from "react-fast-marquee";
+import { Typewriter } from "react-simple-typewriter";
 
 const Spline = dynamic(() => import("@splinetool/react-spline"), {
   ssr: false,
@@ -107,7 +108,19 @@ export default function Home({ scrollProgress = 0 }) {
               textTransform: "uppercase",
               color: "var(--color-accent)",
             }}>
-            Frontend Engineer
+            <Typewriter
+              words={[
+                "Frontend Engineer",
+                "UI Developer",
+                "React JS Developer",
+              ]}
+              loop={0} // 0 = infinite loop
+              cursor
+              cursorStyle="|"
+              typeSpeed={70}
+              deleteSpeed={50}
+              delaySpeed={1500}
+            />
           </span>
         </div>
 
@@ -197,7 +210,7 @@ export default function Home({ scrollProgress = 0 }) {
               borderRadius: "2px",
               cursor: "pointer",
             }}>
-            View Projects
+            Download Resume
           </button>
           <button
             style={{
