@@ -32,7 +32,6 @@ export default function Page() {
     const wrapper = wrapperRef.current;
     if (!wrapper) return;
 
-    // Wait a tick so DOM is fully painted before GSAP reads layout
     const ctx = gsap.context(() => {
       const sectionEls = gsap.utils.toArray(".h-section", wrapper);
 
@@ -41,13 +40,9 @@ export default function Page() {
         ease: "none",
         scrollTrigger: {
           trigger: wrapper,
-          pin: wrapper, // pin the wrapper, not a parent React manages
+          pin: wrapper,
           scrub: 1,
-          // snap: {
-          //   snapTo: 1 / (sectionEls.length - 1),
-          //   duration: { min: 0.3, max: 0.6 },
-          //   ease: "power2.inOut",
-          // },
+
           end: () => `+=${wrapper.offsetWidth}`,
           onUpdate: (self) => {
             const progress = Math.min(self.progress * sectionEls.length, 1);
@@ -61,11 +56,13 @@ export default function Page() {
       });
 
       window.scrollToSection = (index) => {
-        const totalSections = sectionEls.length - 1;
+        const st = tween.scrollTrigger;
+        const totalScroll = st.end - st.start;
+        const targetProgress = index / (sectionEls.length - 1);
 
         gsap.to(window, {
           scrollTo: {
-            y: (wrapper.offsetWidth / totalSections) * index,
+            y: st.start + totalScroll * targetProgress,
           },
           duration: 1,
           ease: "power2.inOut",

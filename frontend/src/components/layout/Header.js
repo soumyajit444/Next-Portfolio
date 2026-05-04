@@ -16,6 +16,7 @@ const navLinks = [
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 40);
@@ -24,7 +25,7 @@ export default function Header() {
   }, []);
 
   const linkStyle = {
-    color: "var(--color-text)",
+    color: "var(--color-text-muted)",
     fontSize: "11px",
     fontWeight: "600",
     letterSpacing: "0.11em",
@@ -36,6 +37,7 @@ export default function Header() {
   const handleNavClick = (e, link) => {
     e.preventDefault();
     e.stopPropagation();
+    setActiveIndex(link.index);
 
     if (typeof window.scrollToSection === "function") {
       window.scrollToSection(link.index);
@@ -101,7 +103,6 @@ export default function Header() {
               textDecoration: "none",
               fontFamily: "var(--font-primary)",
               flexShrink: 0,
-              // UPDATED: Added fontSize and fontWeight to transition for smooth morphing
               transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
               willChange: "font-size, font-weight",
             }}
@@ -122,15 +123,23 @@ export default function Header() {
               <a
                 key={link.label}
                 href={`#${link.id}`}
-                style={linkStyle}
+                style={{
+                  ...linkStyle,
+                  color:
+                    activeIndex === link.index
+                      ? "var(--color-text)"
+                      : "var(--color-text-muted)",
+                }}
                 onClick={(e) => handleNavClick(e, link)}
                 onMouseEnter={(e) =>
                   (e.currentTarget.style.color = "var(--color-text)")
                 }
                 onMouseLeave={(e) =>
-                  (e.currentTarget.style.color = "var(--color-text-muted)")
+                  (e.currentTarget.style.color =
+                    activeIndex === link.index
+                      ? "var(--color-text)"
+                      : "var(--color-text-muted)")
                 }>
-                {/* 3D Vertical Scroll Wrapper */}
                 <span className="roll-wrapper">
                   <span className="roll-track">
                     <span className="roll-item">{link.label}</span>
@@ -225,10 +234,19 @@ export default function Header() {
                 display: "block",
                 padding: "13px 20px",
                 borderBottom: "1px solid rgba(255,255,255,0.06)",
+                color:
+                  activeIndex === link.index
+                    ? "var(--color-text)"
+                    : "var(--color-text-muted)",
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = "#e0e0e0")}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.color = "var(--color-text)")
+              }
               onMouseLeave={(e) =>
-                (e.currentTarget.style.color = "rgba(220,220,220,0.7)")
+                (e.currentTarget.style.color =
+                  activeIndex === link.index
+                    ? "var(--color-text)"
+                    : "var(--color-text-muted)")
               }>
               {link.label}
             </a>
@@ -241,7 +259,6 @@ export default function Header() {
         .header-right { display: flex !important; }
         .hamburger-btn { display: none !important; }
 
-        /* Premium 3D Vertical Scroll Effect */
         .roll-wrapper {
           overflow: hidden;
           height: 1.2em;

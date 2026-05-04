@@ -60,8 +60,7 @@ const CONTACTS = [
 ];
 
 // ── Shared style tokens ────────────────────────────────────────────────────────
-// const FONT_SYNE = "'Syne', sans-serif";
-// const FONT_MONO = "'DM Mono', monospace";
+
 const VIOLET = "#7033fc";
 const VIOLET_LT = "#c084fc";
 const EASE_SHARP = "cubic-bezier(0.77,0,0.18,1)";
@@ -267,19 +266,6 @@ export default function ContactSection() {
           minHeight: "100vh",
           boxSizing: "border-box",
         }}>
-        {/* Canvas — z-index 0, pointer-events none so it never blocks interaction */}
-        <canvas
-          ref={canvasRef}
-          style={{
-            position: "absolute",
-            inset: 0,
-            width: "100%",
-            height: "100%",
-            pointerEvents: "none",
-            zIndex: 0,
-          }}
-        />
-
         {/* ── HEADER ── */}
         <div
           style={{
@@ -384,40 +370,12 @@ export default function ContactSection() {
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "1fr 1px 1fr",
-                  background: "rgba(255,255,255,0.04)",
-                  border: "1px solid var(--color-accent)",
-                  borderRadius: 10,
-                  overflow: "hidden",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: 12,
                   marginBottom: 12,
-                  position: "relative",
-                  zIndex: 20,
                 }}>
-                {/* Top shimmer */}
-                <span
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: 1,
-                    background:
-                      "linear-gradient(90deg, transparent, rgba(139,92,246,0.35) 50%, transparent)",
-                    display: "block",
-                    pointerEvents: "none",
-                  }}
-                />
-
                 {/* Name */}
-                <div
-                  style={{
-                    padding: "13px 16px 11px",
-                    background:
-                      focused === "name"
-                        ? "rgba(139,92,246,0.06)"
-                        : "transparent",
-                    transition: "background 0.25s",
-                  }}>
+                <FieldPanel focused={focused === "name"}>
                   <input
                     className="pf-input"
                     style={inputStyle}
@@ -430,21 +388,10 @@ export default function ContactSection() {
                     onBlur={() => setFocused(null)}
                     autoComplete="off"
                   />
-                </div>
-
-                {/* Divider */}
-                <div style={{ background: "var(--color-accent)" }} />
+                </FieldPanel>
 
                 {/* Phone */}
-                <div
-                  style={{
-                    padding: "13px 16px 11px",
-                    background:
-                      focused === "phone"
-                        ? "rgba(139,92,246,0.06)"
-                        : "transparent",
-                    transition: "background 0.25s",
-                  }}>
+                <FieldPanel focused={focused === "phone"}>
                   <input
                     className="pf-input"
                     style={inputStyle}
@@ -457,7 +404,7 @@ export default function ContactSection() {
                     onBlur={() => setFocused(null)}
                     autoComplete="off"
                   />
-                </div>
+                </FieldPanel>
               </div>
 
               {/* ── Email ── */}
