@@ -1,3 +1,5 @@
+"use client";
+
 import { Work_Sans } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
@@ -5,6 +7,7 @@ import Background from "@/components/animations/Background";
 import SplashCursor from "@/components/animations/SplashCursor";
 import Header from "@/components/layout/Header";
 import { AudioProvider } from "@/components/ui/AudioProvider";
+import { usePathname } from "next/navigation";
 
 const workSans = Work_Sans({
   subsets: ["latin"],
@@ -14,14 +17,19 @@ const workSans = Work_Sans({
 });
 
 export default function RootLayout({ children }) {
+  const pathname = usePathname();
+  const isAdminRoute =
+    pathname?.startsWith("/profile-management") ||
+    pathname?.startsWith("/create-profile");
+
   return (
     <html lang="en" className={workSans.variable} data-theme="light">
       <body suppressHydrationWarning>
         <AudioProvider>
-          <Header />
+          {!isAdminRoute && <Header />}
 
           <Background />
-          {/* Cursor effect */}
+
           <SplashCursor
             DENSITY_DISSIPATION={3.5}
             VELOCITY_DISSIPATION={2}
@@ -34,6 +42,7 @@ export default function RootLayout({ children }) {
             RAINBOW_MODE={false}
             COLOR="#4900d0"
           />
+
           {children}
 
           <Toaster position="top-right" richColors />
