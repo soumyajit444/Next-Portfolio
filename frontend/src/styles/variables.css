@@ -4,6 +4,7 @@
   --color-text: #0a0a0a;
   --color-text-muted: #2a2a2a;
   --color-border: #1a1a1a;
+  --color-border-muted: #cfcfcf;
   --color-accent: #3a3a3a;
   --radius-md: 10px;
   --glass-bg: rgba(239, 239, 239, 0.94);
@@ -19,7 +20,8 @@
   --color-text: #e0e0e0;
 
   --color-text-muted: #b0b0b0;
-  --color-border: #444444;
+  --color-border: #575757;
+  --color-border-muted: #1b1b1b;
   --color-accent: #888888;
   --glass-bg: rgba(15, 15, 15, 0.87);
   --card-shadow: none;

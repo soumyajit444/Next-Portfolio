@@ -3,8 +3,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
-const SECTION_START = 0.6;
-const SECTION_END = 0.9;
+const SECTION_START = 0.62;
+const SECTION_END = 0.8;
 const SECTION_SPAN = SECTION_END - SECTION_START;
 
 // ─────────────────────────────────────────────────────────────────────────────

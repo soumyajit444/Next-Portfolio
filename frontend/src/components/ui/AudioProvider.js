@@ -10,7 +10,7 @@ export function AudioProvider({ children }) {
   const [started, setStarted] = useState(false);
 
   useEffect(() => {
-    const audio = new Audio("/audio/background_audio.mp3");
+    const audio = new Audio("/audio/bg_audio.mp3");
     audio.loop = true;
     audio.volume = 0.35;
     audio.muted = true; // always start muted
