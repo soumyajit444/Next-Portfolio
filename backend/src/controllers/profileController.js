@@ -1,6 +1,32 @@
 const Profile = require("../models/Profile");
 
-// GET
+// GET ALL
+exports.getAllProfiles = async (req, res) => {
+  try {
+    // Optional: Add pagination
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const profiles = await Profile.find()
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 }); // Sort by newest first
+
+    const total = await Profile.countDocuments();
+
+    res.json({
+      profiles,
+      totalPages: Math.ceil(total / limit),
+      currentPage: page,
+      totalItems: total,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// GET SINGLE
 exports.getProfile = async (req, res) => {
   try {
     const { slug } = req.params;
