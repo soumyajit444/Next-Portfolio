@@ -3,6 +3,7 @@ const router = express.Router();
 
 const {
   getProfile,
+  getAllProfiles,
   createProfile,
   updateProfile,
   deleteProfile,
@@ -11,6 +12,11 @@ const {
 const protect = require("../middleware/authMiddleware");
 
 // PUBLIC
+
+// Get all Profile
+router.get("/", getAllProfiles);
+
+// Get Single Profile
 router.get("/:slug", getProfile);
 
 // PROTECTED
