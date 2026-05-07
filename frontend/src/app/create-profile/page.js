@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import SecretKeyGate from "@/components/admin/SecretKeyGate";
-import ThemeToggle from "@/components/ui/ThemeToggle"; // Adjust path as needed
+import ThemeToggle from "@/components/ui/ThemeToggle";
 import { createProfile } from "@/services/profileService";
 
 // Dynamic styles using CSS variables
@@ -11,18 +11,98 @@ const inputStyle = {
   padding: "11px 14px",
   borderRadius: "10px",
   border: "1px solid var(--color-border)",
-  background: "var(--color-bg)", // Use variable
-  color: "var(--color-text)", // Use variable
+  background: "var(--color-bg)",
+  color: "var(--color-text)",
   fontSize: "14px",
   outline: "none",
   boxSizing: "border-box",
+};
+
+// Chip Input Component for Tools/Hobbies
+const ChipInput = ({ items, onChange }) => {
+  const [inputValue, setInputValue] = useState("");
+
+  const handleKeyDown = (e) => {
+    if (["Enter", ","].includes(e.key)) {
+      e.preventDefault();
+      const val = inputValue.trim();
+      if (val && !items.includes(val)) {
+        onChange([...items, val]);
+        setInputValue("");
+      }
+    }
+  };
+
+  const removeItem = (itemToRemove) => {
+    onChange(items.filter((item) => item !== itemToRemove));
+  };
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexWrap: "wrap",
+        gap: "8px",
+        padding: "8px",
+        border: "1px solid var(--color-border)",
+        borderRadius: "10px",
+        background: "var(--color-bg)",
+        minHeight: "50px",
+        alignItems: "center",
+      }}>
+      {items.map((item, index) => (
+        <span
+          key={index}
+          style={{
+            background: "#2a2a2a",
+            color: "#fff",
+            padding: "4px 10px",
+            borderRadius: "16px",
+            fontSize: "13px",
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+          }}>
+          {item}
+          <button
+            onClick={() => removeItem(item)}
+            style={{
+              background: "transparent",
+              border: "none",
+              color: "#ef4444",
+              cursor: "pointer",
+              fontSize: "14px",
+              lineHeight: 1,
+              padding: 0,
+            }}>
+            ×
+          </button>
+        </span>
+      ))}
+      <input
+        value={inputValue}
+        onChange={(e) => setInputValue(e.target.value)}
+        onKeyDown={handleKeyDown}
+        placeholder={items.length === 0 ? "Type and press Enter..." : ""}
+        style={{
+          border: "none",
+          outline: "none",
+          background: "transparent",
+          color: "var(--color-text)",
+          fontSize: "14px",
+          flex: "1 1 150px",
+          padding: "4px",
+        }}
+      />
+    </div>
+  );
 };
 
 const Label = ({ children }) => (
   <div
     style={{
       fontSize: "11px",
-      color: "var(--color-text-muted)", // Use variable
+      color: "var(--color-text-muted)",
       letterSpacing: "1.2px",
       textTransform: "uppercase",
       fontWeight: 600,
@@ -54,9 +134,9 @@ export default function CreateProfilePage() {
     Bio: "",
     YearsOfExperience: "",
     Skills: [{ Name: "", Rating: "" }],
-    IndustryTools: [""],
+    IndustryTools: [], // Changed to empty array for chips
     Education: [{ Degree: "", Institution: "", PassOutYear: "" }],
-    Hobbies: [""],
+    Hobbies: [], // Changed to empty array for chips
     Address: { Street: "", State: "", Pin: "", Country: "" },
     ContactInfo: { PhoneNo: "", Email: "", LinkedIn: "" },
   });
@@ -81,14 +161,9 @@ export default function CreateProfilePage() {
     setForm({ ...form, [arr]: newArr });
   };
 
-  const setArrStr = (arr, idx, value) => {
-    const newArr = [...form[arr]];
-    newArr[idx] = value;
-    setForm({ ...form, [arr]: newArr });
-  };
-
   const addItem = (arr, empty) =>
     setForm({ ...form, [arr]: [...form[arr], empty] });
+
   const removeItem = (arr, idx) =>
     setForm({ ...form, [arr]: form[arr].filter((_, i) => i !== idx) });
 
@@ -126,11 +201,11 @@ export default function CreateProfilePage() {
       <div
         style={{
           minHeight: "100vh",
-          background: "var(--color-bg)", // Dynamic BG
+          background: "var(--color-bg)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          color: "var(--color-text)", // Dynamic Text
+          color: "var(--color-text)",
           fontFamily: "'DM Sans', sans-serif",
         }}>
         <div style={{ textAlign: "center" }}>
@@ -150,13 +225,11 @@ export default function CreateProfilePage() {
     <div
       style={{
         minHeight: "100vh",
-
         padding: "40px 24px",
         fontFamily: "'DM Sans', sans-serif",
-        color: "var(--color-text)", // Dynamic Text
+        color: "var(--color-text)",
         position: "relative",
       }}>
-      {/* Theme Toggle Top Right */}
       <div
         style={{
           position: "absolute",
@@ -172,7 +245,7 @@ export default function CreateProfilePage() {
           <div
             style={{
               fontSize: "13px",
-              color: "#6366f1", // Keep accent color fixed or use var(--color-accent)
+              color: "#6366f1",
               letterSpacing: "2px",
               textTransform: "uppercase",
               marginBottom: "8px",
@@ -192,7 +265,7 @@ export default function CreateProfilePage() {
 
         <div
           style={{
-            background: "var(--glass-bg)", // Use glass effect if available, or var(--color-bg)
+            background: "var(--glass-bg)",
             border: "1px solid var(--color-border)",
             borderRadius: "18px",
             padding: "32px",
@@ -353,7 +426,7 @@ export default function CreateProfilePage() {
             }}
           />
 
-          {/* Tools */}
+          {/* Industry Tools (Chips) */}
           <div
             style={{
               fontSize: "13px",
@@ -365,45 +438,12 @@ export default function CreateProfilePage() {
             }}>
             Industry Tools
           </div>
-          {form.IndustryTools.map((t, i) => (
-            <div
-              key={i}
-              style={{ display: "flex", gap: "10px", marginBottom: "10px" }}>
-              <input
-                style={{ ...inputStyle, flex: 1 }}
-                placeholder="Tool name"
-                value={t}
-                onChange={(e) => setArrStr("IndustryTools", i, e.target.value)}
-              />
-              {form.IndustryTools.length > 1 && (
-                <button
-                  onClick={() => removeItem("IndustryTools", i)}
-                  style={{
-                    background: "transparent",
-                    border: "none",
-                    color: "#ef4444",
-                    cursor: "pointer",
-                    fontSize: "18px",
-                  }}>
-                  ×
-                </button>
-              )}
-            </div>
-          ))}
-          <button
-            onClick={() => addItem("IndustryTools", "")}
-            style={{
-              background: "transparent",
-              border: "1px dashed var(--color-border)",
-              borderRadius: "8px",
-              color: "var(--color-text-muted)",
-              padding: "8px 16px",
-              cursor: "pointer",
-              fontSize: "13px",
-              marginBottom: "16px",
-            }}>
-            + Add Tool
-          </button>
+          <ChipInput
+            items={form.IndustryTools}
+            onChange={(newItems) =>
+              setForm({ ...form, IndustryTools: newItems })
+            }
+          />
 
           <div
             style={{
@@ -429,7 +469,7 @@ export default function CreateProfilePage() {
             <div
               key={i}
               style={{
-                background: "var(--color-bg)", // Slightly different bg for nested items? Or same
+                background: "var(--color-bg)",
                 border: "1px solid var(--color-border)",
                 borderRadius: "12px",
                 padding: "16px",
@@ -514,7 +554,7 @@ export default function CreateProfilePage() {
             }}
           />
 
-          {/* Hobbies */}
+          {/* Hobbies (Chips) */}
           <div
             style={{
               fontSize: "13px",
@@ -526,45 +566,10 @@ export default function CreateProfilePage() {
             }}>
             Hobbies
           </div>
-          {form.Hobbies.map((h, i) => (
-            <div
-              key={i}
-              style={{ display: "flex", gap: "10px", marginBottom: "10px" }}>
-              <input
-                style={{ ...inputStyle, flex: 1 }}
-                placeholder="Hobby"
-                value={h}
-                onChange={(e) => setArrStr("Hobbies", i, e.target.value)}
-              />
-              {form.Hobbies.length > 1 && (
-                <button
-                  onClick={() => removeItem("Hobbies", i)}
-                  style={{
-                    background: "transparent",
-                    border: "none",
-                    color: "#ef4444",
-                    cursor: "pointer",
-                    fontSize: "18px",
-                  }}>
-                  ×
-                </button>
-              )}
-            </div>
-          ))}
-          <button
-            onClick={() => addItem("Hobbies", "")}
-            style={{
-              background: "transparent",
-              border: "1px dashed var(--color-border)",
-              borderRadius: "8px",
-              color: "var(--color-text-muted)",
-              padding: "8px 16px",
-              cursor: "pointer",
-              fontSize: "13px",
-              marginBottom: "16px",
-            }}>
-            + Add Hobby
-          </button>
+          <ChipInput
+            items={form.Hobbies}
+            onChange={(newItems) => setForm({ ...form, Hobbies: newItems })}
+          />
 
           <div
             style={{

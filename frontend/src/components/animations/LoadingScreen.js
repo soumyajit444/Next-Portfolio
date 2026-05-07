@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 
-/* ─── Module-level constants (computed once, same on SSR & client) ─── */
+/* ─── Module-level constants ─── */
 const CX = 200,
   CY = 200,
   R = 130;
@@ -43,19 +43,27 @@ const PHASES = ["Design", "Develop", "Deploy", "Deliver"];
 
 /* ─────────────────────────────────────────────────────────────────── */
 
-export default function LoadingScreen({ onComplete }) {
+export default function LoadingScreen({ onComplete, profile }) {
   const [progress, setProgress] = useState(0);
   const [visible, setVisible] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
   const rafRef = useRef(null);
   const startRef = useRef(null);
 
+  // Extract Dynamic Data with Fallbacks
+  const firstName = profile?.FirstName || "Soumyajit";
+  const lastName = profile?.LastName || "Sengupta";
+  const fullName = `${firstName} ${lastName}`.toUpperCase();
+
+  // Get Pass Out Year from Education array
+  const passOutYear = profile?.Education?.[0]?.PassOutYear || "2022";
+
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
   useEffect(() => {
-    const DURATION = 3000;
+    const DURATION = 3000; // 3 seconds load time
     const ease = (t) =>
       t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
@@ -68,7 +76,7 @@ export default function LoadingScreen({ onComplete }) {
       } else {
         setTimeout(() => {
           setVisible(false);
-          setTimeout(() => onComplete?.(), 900);
+          setTimeout(() => onComplete?.(), 850);
         }, 500);
       }
     };
@@ -82,9 +90,10 @@ export default function LoadingScreen({ onComplete }) {
 
   return (
     <>
-      {/* Only @keyframes live here — Tailwind has no syntax for these */}
+      {/* ─── STYLES ─── */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap');
+        
         @keyframes dotSpin     { to { stroke-dashoffset: -40; } }
         @keyframes subtlePulse { 0%,100%{opacity:.7} 50%{opacity:1} }
         @keyframes countFlicker {
@@ -113,15 +122,30 @@ export default function LoadingScreen({ onComplete }) {
           }}
         />
 
-        {/* Brand — top right */}
+        {/* Brand — top right (Dynamic Progress Fill) */}
         <div
-          className="absolute right-11 top-9 leading-none text-white/85"
+          className="absolute right-11 top-9 leading-none"
           style={{
-            fontFamily: "'Bebas Neue', sans-serif",
-            fontSize: 32,
-            letterSpacing: "0.04em",
+            zIndex: 10,
           }}>
-          SOUMYAJIT SENGUPTA
+          <h1
+            style={{
+              fontFamily: "'Bebas Neue', sans-serif",
+              fontSize: 32,
+              letterSpacing: "0.04em",
+              margin: 0,
+
+              /* THE MAGIC: Text Fill Animation */
+              color: "transparent",
+              backgroundImage: `linear-gradient(90deg, #ffffff ${progress}%, rgba(255,255,255,0.1) ${progress}%)`,
+              WebkitBackgroundClip: "text",
+              backgroundClip: "text",
+
+              /* Smooth transition for the fill edge */
+              transition: "background-image 0.1s linear",
+            }}>
+            {fullName}
+          </h1>
         </div>
 
         {/* SVG orb */}
@@ -277,13 +301,13 @@ export default function LoadingScreen({ onComplete }) {
           </div>
         </div>
 
-        {/* Tagline — bottom left */}
+        {/* Tagline — bottom left (Dynamic Year) */}
         <p
           className="absolute bottom-10 left-11 font-light uppercase leading-[1.9] text-white/30"
           style={{ fontSize: 11, letterSpacing: "0.18em" }}>
           Making high-quality
           <br />
-          projects since 2022
+          projects since {passOutYear}
         </p>
 
         {/* Phase dots — bottom right */}
