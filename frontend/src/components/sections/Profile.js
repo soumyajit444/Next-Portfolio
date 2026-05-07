@@ -1,149 +1,92 @@
 "use client";
 
-import React, { useRef, useEffect, useState } from "react";
-import {
-  motion,
-  useInView,
-  useAnimation,
-  useScroll,
-  useTransform,
-  useSpring,
-} from "framer-motion";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
+import React, { useRef, useEffect } from "react";
+import { motion, useInView, useAnimation } from "framer-motion";
+import { GraduationCap, MapPin } from "lucide-react";
 
-gsap.registerPlugin(ScrollTrigger);
-
-/* ─── viewport reveal hook ─── */
-function useReveal(threshold = 0.15) {
+/* ─── viewport reveal hook ─── 
+    Modified to support toggling back and forth 
+*/
+function useReveal(threshold = 0.1) {
   const ref = useRef(null);
-  const controls = useAnimation();
-  const inView = useInView(ref, { once: true, amount: threshold });
-  useEffect(() => {
-    if (inView) controls.start("show");
-  }, [inView, controls]);
-  return { ref, controls };
+  // removed 'once: true' so it triggers every time
+  const inView = useInView(ref, {
+    once: false,
+    amount: threshold,
+    margin: "-50px 0px -50px 0px", // Triggers slightly before/after element hits edge
+  });
+
+  return { ref, inView };
 }
 
-/* ─── motion variants ─── */
-const fadeUp = (d = 0) => ({
-  hidden: { opacity: 0, y: 36, filter: "blur(6px)" },
+/* ─── MOTION VARIANTS ─── */
+
+// 1. Drop From Top (For Profile Card)
+const dropFromTop = (d = 0) => ({
+  hidden: { opacity: 0, y: -100, scale: 0.9, filter: "blur(10px)" },
+  show: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    filter: "blur(0px)",
+    transition: { type: "spring", stiffness: 100, damping: 20, delay: d },
+  },
+});
+
+// 2. Slide From Right (For Bio Card)
+const slideFromRight = (d = 0) => ({
+  hidden: { opacity: 0, x: 100, filter: "blur(4px)" },
+  show: {
+    opacity: 1,
+    x: 0,
+    filter: "blur(0px)",
+    transition: { duration: 0.8, ease: "easeOut", delay: d },
+  },
+});
+
+// 3. Rise From Bottom (For Bottom Row Cards)
+const riseFromBottom = (d = 0) => ({
+  hidden: { opacity: 0, y: 100, filter: "blur(4px)" },
   show: {
     opacity: 1,
     y: 0,
     filter: "blur(0px)",
-    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: d },
-  },
-});
-const fadeLeft = (d = 0) => ({
-  hidden: { opacity: 0, x: -50, filter: "blur(6px)" },
-  show: {
-    opacity: 1,
-    x: 0,
-    filter: "blur(0px)",
-    transition: { duration: 0.65, ease: [0.22, 1, 0.36, 1], delay: d },
-  },
-});
-const fadeRight = (d = 0) => ({
-  hidden: { opacity: 0, x: 50, filter: "blur(6px)" },
-  show: {
-    opacity: 1,
-    x: 0,
-    filter: "blur(0px)",
-    transition: { duration: 0.65, ease: [0.22, 1, 0.36, 1], delay: d },
+    transition: { duration: 0.7, ease: "easeOut", delay: d },
   },
 });
 
-/* ─── animated skill bar ─── */
-function SkillBar({ label, pct, delay, dark }) {
-  const { ref, controls } = useReveal();
-  return (
-    <div ref={ref} style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-      <div style={{ display: "flex", justifyContent: "space-between" }}>
-        <span
-          style={{
-            fontSize: 10,
-            fontWeight: 600,
-            letterSpacing: "0.12em",
-            textTransform: "uppercase",
-            color: dark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.45)",
-          }}>
-          {label}
-        </span>
-        <span style={{ fontSize: 10, fontWeight: 700, color: "#60a5fa" }}>
-          {pct}%
-        </span>
-      </div>
-      <div
-        style={{
-          width: "100%",
-          height: 3,
-          borderRadius: 99,
-          background: dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)",
-          overflow: "hidden",
-        }}>
-        <motion.div
-          initial={{ width: 0 }}
-          animate={controls}
-          variants={{
-            show: {
-              width: `${pct}%`,
-              transition: { duration: 1.1, ease: [0.22, 1, 0.36, 1], delay },
-            },
-          }}
-          style={{
-            height: "100%",
-            borderRadius: 99,
-            background: "linear-gradient(90deg,#3b82f6,#06b6d4)",
-          }}
-        />
-      </div>
-    </div>
-  );
-}
-
-/* ─── glass card ─── */
-function Card({ children, style = {}, variants, animate }) {
+/* ── glass card ─── */
+function Card({
+  children,
+  style = {},
+  variants,
+  animate,
+  initial,
+  className = "",
+}) {
   return (
     <motion.div
       variants={variants}
       animate={animate}
-      initial="hidden"
-      whileHover={{
-        y: -3,
-        scale: 1.01,
-        transition: { type: "spring", stiffness: 220, damping: 18 },
-      }}
-      className="relative rounded-2xl overflow-hidden"
+      initial={initial} // Ensure we define initial state explicitly if needed, though 'hidden' variant handles it
+      className={`relative rounded-2xl overflow-hidden ${className}`}
       style={{
-        border: "1px solid rgba(255,255,255,0.12)",
-        /* Single semi-transparent background — no double layering */
+        width: "100%",
+        border: "1px solid rgba(139, 92, 246, 0.1)",
         background: "var(--glass-bg)",
-        boxShadow:
-          "inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 0 rgba(0,0,0,0.3), 0 8px 32px rgba(0,0,0,0.4)",
+        boxShadow: "0 4px 20px rgba(0,0,0,0.03)",
         ...style,
       }}>
-      {/* Top-edge glare — simulates the refracted light of real glass */}
+      {/* Subtle glare */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            "linear-gradient(160deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.03) 30%, transparent 60%)",
+            "linear-gradient(160deg, rgba(255,255,255,0.05) 0%, transparent 40%)",
           zIndex: 1,
         }}
       />
-
-      {/* Blue tint radial — gives it that cool-toned glass look */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background:
-            "radial-gradient(ellipse at 25% 0%, rgba(59,130,246,0.09) 0%, transparent 65%)",
-          zIndex: 3,
-        }}
-      />
-
-      <div className="relative z-10">{children}</div>
+      <div className="relative z-10 h-full w-full">{children}</div>
     </motion.div>
   );
 }
@@ -156,24 +99,24 @@ function SectionLabel({ children }) {
         display: "flex",
         alignItems: "center",
         gap: 8,
-        marginBottom: 14,
+        marginBottom: 12,
+        flexShrink: 0,
       }}>
       <div
         style={{
-          width: 16,
+          width: 12,
           height: 2,
           borderRadius: 99,
-          background: "linear-gradient(90deg,#3b82f6,#06b6d4)",
-          flexShrink: 0,
+          background: "#8b5cf6",
         }}
       />
       <span
         style={{
-          fontSize: 9,
+          fontSize: 10,
           fontWeight: 700,
-          letterSpacing: "0.22em",
+          letterSpacing: "0.15em",
           textTransform: "uppercase",
-          color: "#60a5fa",
+          color: "#8b5cf6",
         }}>
         {children}
       </span>
@@ -181,642 +124,432 @@ function SectionLabel({ children }) {
   );
 }
 
-/* ─── icon box ─── */
-function IconBox({ icon }) {
+/* ─── Skill Bar (No Percentage Text) ─── */
+function SkillBar({ label, pct, delay, shouldAnimate }) {
   return (
     <div
       style={{
-        width: 32,
-        height: 32,
-        borderRadius: 9,
-        background: "rgba(59,130,246,0.1)",
-        border: "1px solid rgba(59,130,246,0.22)",
         display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontSize: 15,
-        flexShrink: 0,
+        flexDirection: "column",
+        gap: 6,
+        marginBottom: 12,
       }}>
-      {icon}
+      <div style={{ display: "flex", justifyContent: "space-between" }}>
+        <span
+          style={{
+            fontSize: 11,
+            fontWeight: 600,
+            color: "var(--color-text)",
+            textTransform: "uppercase",
+            letterSpacing: "0.05em",
+          }}>
+          {label}
+        </span>
+      </div>
+      <div
+        style={{
+          width: "100%",
+          height: 4,
+          borderRadius: 99,
+          background: "rgba(139, 92, 246, 0.1)",
+          overflow: "hidden",
+        }}>
+        <motion.div
+          // We control the width directly via animate prop based on visibility
+          animate={{ width: shouldAnimate ? `${pct}%` : "0%" }}
+          transition={{ duration: 0.8, ease: "easeOut", delay: delay }}
+          style={{
+            height: "100%",
+            borderRadius: 99,
+            background: "linear-gradient(90deg, #8b5cf6, #a78bfa)",
+          }}
+        />
+      </div>
     </div>
-  );
-}
-
-/* ─── scatter destinations per card (vw/vh units as multipliers) ─── */
-const SCATTER = {
-  profile: { x: -120, y: -80, r: -25 },
-  hobbies: { x: -140, y: 60, r: 18 },
-  bio: { x: 60, y: -100, r: 12 },
-  skills: { x: -100, y: 120, r: -20 },
-  address: { x: 40, y: 130, r: 15 },
-  contact: { x: 140, y: 80, r: -10 },
-};
-
-/* ─── ScatterCard wrapper ─── */
-function ScatterCard({ scatterKey, scrollProgress, children, style = {} }) {
-  const s = SCATTER[scatterKey];
-
-  const x = useTransform(scrollProgress, [0, 1], [0, s.x * 8]);
-  const y = useTransform(scrollProgress, [0, 1], [0, s.y * 8]);
-  const rotate = useTransform(scrollProgress, [0, 1], [0, s.r]);
-  const opacity = useTransform(scrollProgress, [0, 0.6, 1], [1, 0.3, 0]);
-  const scale = useTransform(scrollProgress, [0, 1], [1, 0.7]);
-
-  const springX = useSpring(x, { stiffness: 80, damping: 20 });
-  const springY = useSpring(y, { stiffness: 80, damping: 20 });
-  const springR = useSpring(rotate, { stiffness: 80, damping: 20 });
-  const springO = useSpring(opacity, { stiffness: 80, damping: 20 });
-  const springS = useSpring(scale, { stiffness: 80, damping: 20 });
-
-  return (
-    <motion.div
-      style={{
-        x: springX,
-        y: springY,
-        rotate: springR,
-        opacity: springO,
-        scale: springS,
-        willChange: "transform, opacity",
-        ...style,
-      }}>
-      {children}
-    </motion.div>
   );
 }
 
 /* ══════════════════════════════════
    MAIN COMPONENT
 ══════════════════════════════════ */
-const Profile = () => {
-  const [theme, setTheme] = useState(() => {
-    if (typeof window === "undefined") return "light";
-    return document.documentElement.getAttribute("data-theme") || "light";
-  });
+const Profile = ({ profile }) => {
+  /* ── DATA PREPARATION ── */
+  const fullName =
+    `${profile?.FirstName || ""} ${profile?.LastName || ""}`.trim();
+  const jobRole = profile?.CurrentJobRole || "Developer";
+  const bioText = profile?.Bio || "No bio available.";
 
-  useEffect(() => {
-    const currentTheme =
-      document.documentElement.getAttribute("data-theme") || "light";
-    setTheme(currentTheme);
-    const observer = new MutationObserver(() => {
-      const updatedTheme =
-        document.documentElement.getAttribute("data-theme") || "light";
-      setTheme(updatedTheme);
-    });
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["data-theme"],
-    });
-    return () => observer.disconnect();
-  }, []);
+  const initials =
+    `${profile?.FirstName?.[0] || ""}${profile?.LastName?.[0] || ""}`.toUpperCase();
 
-  const dark = theme === "dark";
-  const txt = "var(--color-text)";
-  const muted = "var(--color-text-muted)";
+  const skillsData =
+    profile?.Skills?.map((s) => ({
+      label: s.Name,
+      pct: (s.Rating / 10) * 100,
+    })) || [];
 
-  /* reveal hooks */
-  const profileR = useReveal();
-  const skillsR = useReveal();
-  const bioR = useReveal();
-  const hobbyR = useReveal();
-  const addrR = useReveal();
-  const contactR = useReveal();
+  const hobbiesData = profile?.Hobbies || [];
+  const educationData = profile?.Education || [];
 
-  /* ── scroll progress for scatter ── */
-  const sectionRef = useRef(null);
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ["end end", "start start"],
-  });
+  const addr = profile?.Address || {};
+  const addressString = `${addr.Street || ""}, ${addr.State || ""} ${addr.Pin || ""}, ${addr.Country || ""}`;
 
-  const adjustedProgress = useTransform(scrollYProgress, [0, 1], [0, 1]);
+  /* REVEAL HOOKS 
+     These now return { ref, inView } instead of controls
+  */
+  const bioR = useReveal(0.2);
+  const profileR = useReveal(0.1);
+  const hobbiesR = useReveal(0.1);
+  const skillsR = useReveal(0.1);
+  const eduR = useReveal(0.1);
+  const addrR = useReveal(0.1);
+
+  const UNIFORM_GAP = 20;
 
   return (
-    <div ref={sectionRef} style={{ height: "250vh", position: "relative" }}>
+    <div
+      style={{
+        height: "100vh",
+        width: "100%",
+        padding: "15vh 20px",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        fontFamily: "var(--font-primary)",
+        color: "var(--color-text)",
+        boxSizing: "border-box",
+        overflow: "hidden",
+      }}>
       <div
         style={{
-          position: "sticky",
-          top: 0,
           width: "100%",
-          height: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "48px 36px",
-          fontFamily: "var(--font-primary)",
-          color: txt,
-          boxSizing: "border-box",
-          overflow: "hidden",
+          maxWidth: 1200,
+          height: "100%",
+          display: "grid",
+          gridTemplateRows: "2fr 3fr",
+          gap: UNIFORM_GAP,
         }}>
-        {/* ── OUTER GRID ── */}
+        {/* ─ TOP ROW ── */}
         <div
           style={{
-            width: "100%",
-            maxWidth: 1060,
             display: "grid",
-            gridTemplateColumns: "220px 1fr",
-            gap: 22,
-            alignItems: "stretch",
+            gridTemplateColumns: "1fr 3fr",
+            gap: UNIFORM_GAP,
+            minHeight: 0,
           }}>
-          {/* ════ LEFT COLUMN ════ */}
+          {/* PROFILE CARD */}
+          <div ref={profileR.ref} style={{ height: "100%" }}>
+            <Card
+              variants={dropFromTop(0)}
+              // If inView is true, animate to 'show', else animate to 'hidden'
+              animate={profileR.inView ? "show" : "hidden"}
+              style={{
+                padding: "24px",
+                height: "100%",
+                width: "100%",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                textAlign: "center",
+              }}>
+              <div
+                style={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: "50%",
+                  background: "linear-gradient(135deg, #7c3aed, #a78bfa)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 32,
+                  fontWeight: 700,
+                  color: "#fff",
+                  marginBottom: 12,
+                  boxShadow: "0 8px 20px -5px rgba(124, 58, 237, 0.4)",
+                  margin: "0 auto 12px auto",
+                }}>
+                {initials}
+              </div>
+
+              <h2
+                style={{
+                  fontSize: 18,
+                  fontWeight: 700,
+                  margin: "0 0 4px",
+                  color: "var(--color-text)",
+                }}>
+                {fullName}
+              </h2>
+              <p
+                style={{
+                  fontSize: 12,
+                  color: "#8b5cf6",
+                  fontWeight: 600,
+                  margin: 0,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.1em",
+                }}>
+                {jobRole}
+              </p>
+            </Card>
+          </div>
+
+          {/* BIO CARD */}
+          <div ref={bioR.ref} style={{ height: "100%", width: "100%" }}>
+            <Card
+              variants={slideFromRight(0.1)}
+              animate={bioR.inView ? "show" : "hidden"}
+              style={{
+                padding: "24px",
+                height: "100%",
+                width: "100%",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "flex-start",
+              }}>
+              <SectionLabel>My Bio</SectionLabel>
+              <div
+                style={{
+                  overflowY: "auto",
+                  flex: 1,
+                  width: "100%",
+                }}
+                className="custom-scroll">
+                <p
+                  style={{
+                    fontSize: 14,
+                    lineHeight: 1.6,
+                    color: "var(--color-text-muted)",
+                    margin: 0,
+                    width: "100%",
+                    textAlign: "left",
+                  }}>
+                  {bioText}
+                </p>
+              </div>
+            </Card>
+          </div>
+        </div>
+
+        {/* ── BOTTOM ROW ── */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr 1fr",
+            gap: UNIFORM_GAP,
+            minHeight: 0,
+          }}>
+          {/* LEFT: HOBBIES */}
           <div
+            ref={hobbiesR.ref}
             style={{
+              height: "100%",
               display: "flex",
               flexDirection: "column",
-              gap: 18,
-              height: "100%",
-              alignSelf: "stretch",
             }}>
-            {/* PROFILE CARD */}
-            <ScatterCard
-              scatterKey="profile"
-              scrollProgress={adjustedProgress}
+            <Card
+              variants={riseFromBottom(0.1)}
+              animate={hobbiesR.inView ? "show" : "hidden"}
               style={{
-                flex: "3 1 0",
-                minHeight: 0,
+                padding: "20px",
+                height: "100%",
                 display: "flex",
                 flexDirection: "column",
               }}>
+              <SectionLabel>Hobbies</SectionLabel>
               <div
-                ref={profileR.ref}
-                style={{
-                  flex: 1,
-                  minHeight: 0,
-                  display: "flex",
-                  flexDirection: "column",
-                }}>
-                <Card
-                  variants={fadeLeft(0)}
-                  animate={profileR.controls}
-                  style={{
-                    padding: "26px 18px 20px",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 12,
-                    textAlign: "center",
-                    flex: 1,
-                    boxSizing: "border-box",
-                  }}>
-                  <div
-                    style={{
-                      position: "relative",
-                      width: 84,
-                      height: 84,
-                      flexShrink: 0,
-                    }}>
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{
-                        duration: 9,
-                        repeat: Infinity,
-                        ease: "linear",
-                      }}
-                      style={{
-                        position: "absolute",
-                        inset: -5,
-                        borderRadius: "50%",
-                        // background:
-                        //   "conic-gradient(#3b82f6,#06b6d4,#8b5cf6,#ec4899,#3b82f6)",
-                        opacity: 0.75,
-                      }}
-                    />
-                    <div
-                      style={{
-                        position: "relative",
-                        width: 84,
-                        height: 84,
-                        borderRadius: "50%",
-                        overflow: "hidden",
-                        background: "rgba(255,255,255,0.06)",
-                        border: "3px solid rgba(8,12,20,0.95)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: 36,
-                      }}>
-                      🧑‍💻
-                    </div>
-                    <motion.span
-                      animate={{ opacity: [1, 0.4, 1] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                      style={{
-                        position: "absolute",
-                        bottom: 4,
-                        right: 4,
-                        width: 11,
-                        height: 11,
-                        borderRadius: "50%",
-                        background: "#34d399",
-                        border: "2px solid #080c14",
-                      }}
-                    />
-                  </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 3,
-                    }}>
-                    <p
-                      style={{
-                        fontSize: 9,
-                        letterSpacing: "0.24em",
-                        fontWeight: 700,
-                        color: "#60a5fa",
-                        textTransform: "uppercase",
-                        margin: 0,
-                      }}>
-                      Profile
-                    </p>
-                    <h2
-                      style={{
-                        fontFamily: "var(--font-primary)",
-                        fontSize: 15,
-                        fontWeight: 700,
-                        margin: 0,
-                        color: txt,
-                      }}>
-                      Alex Rivers
-                    </h2>
-                    <p style={{ fontSize: 11, color: muted, margin: 0 }}>
-                      Creative Developer
-                    </p>
-                  </div>
-                </Card>
-              </div>
-            </ScatterCard>
-
-            {/* SKILLS CARD */}
-            <ScatterCard
-              scatterKey="hobbies"
-              scrollProgress={adjustedProgress}
-              style={{
-                flex: "2 1 0",
-                minHeight: 0,
-                display: "flex",
-                flexDirection: "column",
-              }}>
-              <div
-                ref={hobbyR.ref}
-                style={{
-                  flex: 1,
-                  minHeight: 0,
-                  display: "flex",
-                  flexDirection: "column",
-                }}>
-                <Card
-                  variants={fadeLeft(0.1)}
-                  animate={hobbyR.controls}
-                  style={{
-                    padding: "20px 18px",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 0,
-                    height: "100%",
-                    flex: 1,
-                    boxSizing: "border-box",
-                    overflow: "hidden",
-                  }}>
-                  <SectionLabel>Hobbies</SectionLabel>
-                  <div
-                    className="custom-scroll"
-                    style={{ overflowY: "auto", flex: 1, paddingRight: 6 }}>
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 12,
-                      }}>
-                      {[
-                        {
-                          icon: "📸",
-                          label: "Photography",
-                          sub: "Short captions, filmography",
-                        },
-                        {
-                          icon: "🥾",
-                          label: "Hiking",
-                          sub: "Hiking and the great outdoors",
-                        },
-                      ].map((h) => (
-                        <motion.div
-                          key={h.label}
-                          whileHover={{
-                            x: 4,
-                            transition: { type: "spring", stiffness: 300 },
-                          }}
-                          style={{
-                            display: "flex",
-                            alignItems: "flex-start",
-                            gap: 10,
-                          }}>
-                          <IconBox icon={h.icon} />
-                          <div>
-                            <p
-                              style={{
-                                fontSize: 11,
-                                fontWeight: 600,
-                                color: txt,
-                                margin: "0 0 2px",
-                              }}>
-                              {h.label}
-                            </p>
-                            <p
-                              style={{
-                                fontSize: 9,
-                                color: muted,
-                                margin: 0,
-                                lineHeight: 1.45,
-                              }}>
-                              {h.sub}
-                            </p>
-                          </div>
-                        </motion.div>
-                      ))}
-                    </div>
-                  </div>
-                </Card>
-              </div>
-            </ScatterCard>
-          </div>
-          {/* end LEFT */}
-
-          {/* ════ RIGHT COLUMN ════ */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-            {/* BIO */}
-            <ScatterCard scatterKey="bio" scrollProgress={adjustedProgress}>
-              <div ref={bioR.ref}>
-                {/* <motion.h1
-                  variants={fadeUp(0)}
-                  animate={bioR.controls}
-                  initial="hidden"
-                  style={{
-                    fontFamily: "var(--font-primary)",
-                    fontSize: 24,
-                    fontWeight: 700,
-                    letterSpacing: "0.1em",
-                    textTransform: "uppercase",
-                    margin: "0 0 14px",
-                    color: txt,
-                  }}>
-                  MY PROFILE
-                </motion.h1> */}
-                <Card
-                  variants={fadeRight(0.07)}
-                  animate={bioR.controls}
-                  style={{
-                    padding: "20px 22px",
-                    height: 150,
-                    display: "flex",
-                    flexDirection: "column",
-                  }}>
-                  <SectionLabel>My Bio</SectionLabel>
-                  <div
-                    style={{ overflowY: "auto", flex: 1, paddingRight: 6 }}
-                    className="custom-scroll">
+                style={{ overflowY: "auto", flex: 1, paddingRight: "8px" }}
+                className="custom-scroll">
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {hobbiesData.length > 0 ? (
+                    hobbiesData.map((h, i) => (
+                      <div
+                        key={i}
+                        style={{
+                          padding: "10px 14px",
+                          background: "rgba(139, 92, 246, 0.05)",
+                          borderRadius: "8px",
+                          border: "1px solid rgba(139, 92, 246, 0.1)",
+                          fontSize: 13,
+                          fontWeight: 500,
+                          color: "var(--color-text)",
+                        }}>
+                        {h}
+                      </div>
+                    ))
+                  ) : (
                     <p
                       style={{
                         fontSize: 12,
-                        lineHeight: 1.85,
-                        color: muted,
-                        margin: 0,
+                        color: "var(--color-text-muted)",
                       }}>
-                      Lorem ipsum dolor sit amet, consectetur adipiscing elit...
+                      No hobbies listed.
                     </p>
-                  </div>
-                </Card>
-              </div>
-            </ScatterCard>
-
-            {/* ── Skills / ADDRESS / CONTACT ── */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "minmax(0, 3fr) minmax(0, 2fr)",
-                gap: 18,
-                alignItems: "stretch",
-              }}>
-              {/* LEFT 60% — SKILLS */}
-              <ScatterCard
-                scatterKey="skills"
-                scrollProgress={adjustedProgress}>
-                <div ref={skillsR.ref}>
-                  <Card
-                    variants={fadeLeft(0.1)}
-                    animate={skillsR.controls}
-                    style={{
-                      padding: "18px 16px",
-                      height: 230,
-                      display: "flex",
-                      flexDirection: "column",
-                    }}>
-                    <SectionLabel>Skills</SectionLabel>
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 12,
-                        flex: 1,
-                        justifyContent: "center",
-                      }}>
-                      {[
-                        { label: "React", pct: 92 },
-                        { label: "Next.js", pct: 88 },
-                        { label: "Tailwind", pct: 95 },
-                        { label: "TypeScript", pct: 80 },
-                      ].map((s, i) => (
-                        <SkillBar
-                          key={s.label}
-                          label={s.label}
-                          pct={s.pct}
-                          delay={i * 0.09}
-                          dark={dark}
-                        />
-                      ))}
-                    </div>
-                  </Card>
+                  )}
                 </div>
-              </ScatterCard>
+              </div>
+            </Card>
+          </div>
 
-              {/* RIGHT 40% — ADDRESS + CONTACT stacked */}
+          {/* MIDDLE: SKILLS */}
+          <div
+            ref={skillsR.ref}
+            style={{
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+            }}>
+            <Card
+              variants={riseFromBottom(0.2)}
+              animate={skillsR.inView ? "show" : "hidden"}
+              style={{
+                padding: "20px",
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+              }}>
+              <SectionLabel>Technical Skills</SectionLabel>
               <div
+                style={{ overflowY: "auto", flex: 1, paddingRight: "8px" }}
+                className="custom-scroll">
+                {skillsData.length > 0 ? (
+                  skillsData.map((s, i) => (
+                    <SkillBar
+                      key={s.label}
+                      label={s.label}
+                      pct={s.pct}
+                      delay={i * 0.05}
+                      shouldAnimate={skillsR.inView} // Pass visibility to skill bar
+                    />
+                  ))
+                ) : (
+                  <p style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
+                    No skills listed.
+                  </p>
+                )}
+              </div>
+            </Card>
+          </div>
+
+          {/* RIGHT: EDUCATION & LOCATION STACKED */}
+          <div
+            style={{
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              gap: UNIFORM_GAP,
+            }}>
+            {/* EDUCATION */}
+            <div ref={eduR.ref} style={{ flex: 1, minHeight: 0 }}>
+              <Card
+                variants={riseFromBottom(0.3)}
+                animate={eduR.inView ? "show" : "hidden"}
                 style={{
+                  padding: "20px",
+                  height: "100%",
                   display: "flex",
                   flexDirection: "column",
-                  gap: 18,
-                  height: 230,
-                  minWidth: 0,
                 }}>
-                {/* ADDRESS */}
-                <ScatterCard
-                  scatterKey="address"
-                  scrollProgress={adjustedProgress}
-                  style={{
-                    flex: 0.9,
-                    minHeight: 0,
-                    display: "flex",
-                    flexDirection: "column",
-                  }}>
+                <SectionLabel>Education</SectionLabel>
+                <div
+                  style={{ overflowY: "auto", flex: 1, paddingRight: "8px" }}
+                  className="custom-scroll">
                   <div
-                    ref={addrR.ref}
                     style={{
-                      flex: 1,
-                      minHeight: 0,
                       display: "flex",
                       flexDirection: "column",
+                      gap: 12,
                     }}>
-                    <Card
-                      variants={fadeLeft(0.1)}
-                      animate={addrR.controls}
-                      style={{
-                        flex: 1,
-                        padding: "14px 16px",
-                        display: "flex",
-                        flexDirection: "column",
-                        overflow: "hidden",
-                      }}>
-                      <SectionLabel>Address</SectionLabel>
-                      <div
-                        className="custom-scroll"
-                        style={{ overflowY: "auto", flex: 1 }}>
+                    {educationData.length > 0 ? (
+                      educationData.map((edu, i) => (
                         <div
+                          key={i}
                           style={{
                             display: "flex",
-                            flexDirection: "column",
-                            gap: 8,
+                            gap: 10,
+                            alignItems: "flex-start",
                           }}>
                           <div
                             style={{
-                              display: "flex",
-                              alignItems: "flex-start",
-                              gap: 10,
+                              marginTop: 2,
+                              color: "#8b5cf6",
+                              flexShrink: 0,
                             }}>
-                            <IconBox icon="📍" />
-                            <div>
-                              <p
-                                style={{
-                                  fontSize: 11,
-                                  fontWeight: 600,
-                                  color: txt,
-                                  margin: "0 0 2px",
-                                }}>
-                                123 Design Street
-                              </p>
-                              <p
-                                style={{
-                                  fontSize: 10,
-                                  color: muted,
-                                  margin: 0,
-                                }}>
-                                Creative City, 90210
-                              </p>
+                            <GraduationCap size={14} />
+                          </div>
+                          <div>
+                            <div
+                              style={{
+                                fontSize: 13,
+                                fontWeight: 700,
+                                color: "var(--color-text)",
+                              }}>
+                              {edu.Degree}
+                            </div>
+                            <div
+                              style={{
+                                fontSize: 11,
+                                color: "var(--color-text-muted)",
+                                marginTop: 2,
+                              }}>
+                              {edu.Institution}
+                            </div>
+                            <div
+                              style={{
+                                fontSize: 10,
+                                color: "#8b5cf6",
+                                marginTop: 2,
+                              }}>
+                              {edu.PassOutYear}
                             </div>
                           </div>
                         </div>
-                      </div>
-                    </Card>
+                      ))
+                    ) : (
+                      <p
+                        style={{
+                          fontSize: 12,
+                          color: "var(--color-text-muted)",
+                        }}>
+                        No education details.
+                      </p>
+                    )}
                   </div>
-                </ScatterCard>
-
-                {/* CONTACT */}
-                <ScatterCard
-                  scatterKey="contact"
-                  scrollProgress={adjustedProgress}
-                  style={{
-                    flex: 1.1,
-                    minHeight: 0,
-                    display: "flex",
-                    flexDirection: "column",
-                  }}>
-                  <div
-                    ref={contactR.ref}
-                    style={{
-                      flex: 1,
-                      minHeight: 0,
-                      display: "flex",
-                      flexDirection: "column",
-                    }}>
-                    <Card
-                      variants={fadeLeft(0.1)}
-                      animate={contactR.controls}
-                      style={{
-                        flex: 1,
-                        padding: "14px 16px",
-                        display: "flex",
-                        flexDirection: "column",
-                        overflow: "hidden",
-                      }}>
-                      <SectionLabel>Contact Info</SectionLabel>
-                      <div className="custom-scroll" style={{ flex: 1 }}>
-                        <div
-                          style={{
-                            display: "grid",
-                            gridTemplateColumns: "repeat(3, 1fr)",
-                            gap: 12,
-                          }}>
-                          {[
-                            {
-                              icon: "✉️",
-                              label: "Email",
-                              val: "alex@rivers.dev",
-                            },
-                            {
-                              icon: "📞",
-                              label: "Phone",
-                              val: "+1 (555) 000-0000",
-                            },
-                            {
-                              icon: "💼",
-                              label: "LinkedIn",
-                              val: "linkedin.com/in/alexrivers",
-                            },
-                          ].map((c) => (
-                            <motion.div
-                              key={c.label}
-                              whileHover={{
-                                y: -3,
-                                transition: { type: "spring", stiffness: 300 },
-                              }}
-                              style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                gap: 2,
-                                padding: 4,
-                                cursor: "pointer",
-                              }}
-                              title={c.val} // ✅ tooltip
-                            >
-                              <IconBox icon={c.icon} />
-
-                              <p
-                                style={{
-                                  fontSize: 9,
-                                  fontWeight: 600,
-                                  letterSpacing: "0.12em",
-                                  textTransform: "uppercase",
-                                  color: muted,
-                                  margin: 0,
-                                  textAlign: "center",
-                                }}>
-                                {c.label}
-                              </p>
-                            </motion.div>
-                          ))}
-                        </div>
-                      </div>
-                    </Card>
-                  </div>
-                </ScatterCard>
-              </div>
-              {/* end RIGHT 40% */}
+                </div>
+              </Card>
             </div>
 
-            {/* end bottom grid */}
+            {/* LOCATION */}
+            <div ref={addrR.ref} style={{ flex: 0.6, minHeight: 0 }}>
+              <Card
+                variants={riseFromBottom(0.4)}
+                animate={addrR.inView ? "show" : "hidden"}
+                style={{
+                  padding: "20px",
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                }}>
+                <SectionLabel>Location</SectionLabel>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{ color: "#8b5cf6", flexShrink: 0 }}>
+                    <MapPin size={18} />
+                  </div>
+                  <p
+                    style={{
+                      fontSize: 12,
+                      color: "var(--color-text-muted)",
+                      lineHeight: 1.4,
+                    }}>
+                    {addressString || "No address provided."}
+                  </p>
+                </div>
+              </Card>
+            </div>
           </div>
-          {/* end RIGHT */}
         </div>
       </div>
     </div>

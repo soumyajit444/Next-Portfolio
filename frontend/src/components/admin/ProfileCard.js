@@ -15,22 +15,23 @@ export default function ProfileCard({ profile, onView, onEdit, onDelete }) {
     <div
       onClick={() => onView(profile)}
       style={{
-        background: "#111",
-        border: "1px solid #1e1e1e",
+        background: "var(--color-bg)", // Dynamic Background
+        border: "1px solid var(--color-border)", // Dynamic Border
         borderRadius: "16px",
         padding: "28px 24px",
         cursor: "pointer",
         transition: "border-color 0.2s, transform 0.2s, box-shadow 0.2s",
         position: "relative",
         overflow: "hidden",
+        color: "var(--color-text)", // Ensure text inherits correctly
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.borderColor = "#6366f1";
+        e.currentTarget.style.borderColor = "#6366f1"; // Keep accent color fixed or use var(--color-accent)
         e.currentTarget.style.transform = "translateY(-4px)";
         e.currentTarget.style.boxShadow = "0 12px 40px rgba(99,102,241,0.12)";
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.borderColor = "#1e1e1e";
+        e.currentTarget.style.borderColor = "var(--color-border)";
         e.currentTarget.style.transform = "translateY(0)";
         e.currentTarget.style.boxShadow = "none";
       }}>
@@ -70,7 +71,7 @@ export default function ProfileCard({ profile, onView, onEdit, onDelete }) {
         style={{
           fontWeight: 700,
           fontSize: "17px",
-          color: "#fff",
+          color: "var(--color-text)", // Dynamic Text
           marginBottom: "4px",
         }}>
         {fullName}
@@ -78,18 +79,27 @@ export default function ProfileCard({ profile, onView, onEdit, onDelete }) {
       <div
         style={{
           fontSize: "13px",
-          color: "#6366f1",
+          color: "#6366f1", // Accent Color
           marginBottom: "8px",
           fontWeight: 500,
         }}>
         {profile.CurrentJobRole || "—"}
       </div>
-      <div style={{ fontSize: "13px", color: "#555", marginBottom: "4px" }}>
+      <div
+        style={{
+          fontSize: "13px",
+          color: "var(--color-text-muted)", // Muted Text
+          marginBottom: "4px",
+        }}>
         {profile.YearsOfExperience
           ? `${profile.YearsOfExperience} yrs exp`
           : ""}
       </div>
-      <div style={{ fontSize: "12px", color: "#444" }}>
+      <div
+        style={{
+          fontSize: "12px",
+          color: "var(--color-text-muted)", // Muted Text
+        }}>
         {profile.profileSlug}
       </div>
 
@@ -103,9 +113,9 @@ export default function ProfileCard({ profile, onView, onEdit, onDelete }) {
             flex: 1,
             padding: "8px",
             borderRadius: "8px",
-            border: "1px solid #2a2a2a",
+            border: "1px solid var(--color-border)",
             background: "transparent",
-            color: "#aaa",
+            color: "var(--color-text-muted)",
             fontSize: "13px",
             cursor: "pointer",
             transition: "all 0.15s",
@@ -115,8 +125,8 @@ export default function ProfileCard({ profile, onView, onEdit, onDelete }) {
             e.currentTarget.style.color = "#6366f1";
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = "#2a2a2a";
-            e.currentTarget.style.color = "#aaa";
+            e.currentTarget.style.borderColor = "var(--color-border)";
+            e.currentTarget.style.color = "var(--color-text-muted)";
           }}>
           ✏️ Edit
         </button>
@@ -126,9 +136,9 @@ export default function ProfileCard({ profile, onView, onEdit, onDelete }) {
             flex: 1,
             padding: "8px",
             borderRadius: "8px",
-            border: "1px solid #2a2a2a",
+            border: "1px solid var(--color-border)",
             background: "transparent",
-            color: "#aaa",
+            color: "var(--color-text-muted)",
             fontSize: "13px",
             cursor: "pointer",
             transition: "all 0.15s",
@@ -138,8 +148,8 @@ export default function ProfileCard({ profile, onView, onEdit, onDelete }) {
             e.currentTarget.style.color = "#ef4444";
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = "#2a2a2a";
-            e.currentTarget.style.color = "#aaa";
+            e.currentTarget.style.borderColor = "var(--color-border)";
+            e.currentTarget.style.color = "var(--color-text-muted)";
           }}>
           🗑️ Delete
         </button>

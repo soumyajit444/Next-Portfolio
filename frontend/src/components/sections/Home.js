@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useEffect, useState, useRef } from "react";
 import Marquee from "react-fast-marquee";
 import { Typewriter } from "react-simple-typewriter";
+import { motion } from "framer-motion";
 
 const Spline = dynamic(() => import("@splinetool/react-spline"), {
   ssr: false,
@@ -14,33 +15,66 @@ const Spline = dynamic(() => import("@splinetool/react-spline"), {
   ),
 });
 
-export default function Home({ scrollProgress = 0 }) {
+/* ─── Animation Variants ─── */
+const containerVariants = {
+  hidden: { opacity: 0, y: 30 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.8,
+      ease: [0.22, 1, 0.36, 1],
+      staggerChildren: 0.1,
+      delayChildren: 0.05, // Reduced delay for snappier feel
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, ease: "easeOut" },
+  },
+};
+
+export default function Home({ scrollProgress = 0, profile, isLoaded }) {
   const [mounted, setMounted] = useState(false);
   const [theme, setTheme] = useState("light");
   const [splineError, setSplineError] = useState(false);
   const splineContainerRef = useRef(null);
 
+  // State to control text animation trigger
+  const [triggerAnimation, setTriggerAnimation] = useState(false);
+
+  // 1. Handle Theme & Mounting
   useEffect(() => {
     setMounted(true);
-
     const getTheme = () =>
       document.documentElement.getAttribute("data-theme") || "light";
-
     setTheme(getTheme());
 
     const observer = new MutationObserver(() => {
       setTheme(getTheme());
       setSplineError(false);
     });
-
     observer.observe(document.documentElement, {
       attributes: true,
       attributeFilter: ["data-theme"],
     });
-
     return () => observer.disconnect();
   }, []);
 
+  // 2. TRIGGER ANIMATION IMMEDIATELY WHEN LOADED
+  useEffect(() => {
+    if (isLoaded) {
+      // No timeout needed. As soon as the loader unmounts/fades, this runs.
+      setTriggerAnimation(true);
+    }
+  }, [isLoaded]);
+
+  // 3. Handle Spline Scale Animation
   useEffect(() => {
     if (!splineContainerRef.current) return;
     const scale = 1 + scrollProgress * 0.3;
@@ -49,26 +83,34 @@ export default function Home({ scrollProgress = 0 }) {
 
   if (!mounted) return null;
 
-  const LIGHT_SCENE = "/light-chips.spline";
-  const DARK_SCENE = "/dark-chips.spline";
-  const scene = theme === "dark" ? DARK_SCENE : LIGHT_SCENE;
+  // 4. Prepare Dynamic Data
+  const firstName = profile?.FirstName || "Soumyajit";
+  const lastName = profile?.LastName || "Sengupta";
+  const bio =
+    profile?.Bio || "Building scalable, high-performance web applications...";
+  const yearsExp = profile?.YearsOfExperience || 0;
+  const skillsCount = profile?.Skills?.length || 0;
 
-  const skills = [
+  const jobRoles = profile?.CurrentJobRole
+    ? [profile.CurrentJobRole]
+    : ["Frontend Engineer", "UI Developer", "React JS Developer"];
+
+  const skillNames = profile?.Skills?.map((s) => s.Name) || [
     "React",
     "Next.js",
     "TypeScript",
-    "Redux Toolkit",
     "Tailwind",
-    "Git",
-    "Node.js",
-    "GraphQL",
-    "Framer Motion",
   ];
+
+  const LIGHT_SCENE = "/light-chips.spline";
+  const DARK_SCENE = "/dark-chips.spline";
+  const scene = theme === "dark" ? DARK_SCENE : LIGHT_SCENE;
 
   return (
     <section
       className="w-full h-full flex flex-col md:flex-row items-center justify-between"
       style={{
+        // Ensure background matches the loader's bg color for seamlessness
         background: "var(--color-bg)",
         color: "var(--color-text)",
         fontFamily: "var(--font-primary)",
@@ -85,58 +127,67 @@ export default function Home({ scrollProgress = 0 }) {
           paddingRight: "2rem",
           paddingTop: "2.5rem",
           paddingBottom: "2.5rem",
+          position: "relative",
+          zIndex: 10,
         }}>
-        {/* Label */}
-        <div
+        {/* TEXT CONTAINER */}
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate={triggerAnimation ? "visible" : "hidden"}
           style={{
             display: "flex",
-            alignItems: "center",
-            gap: "12px",
-            marginBottom: "2rem",
+            flexDirection: "column",
+            alignItems: "flex-start",
           }}>
-          <span
-            style={{
-              width: "28px",
-              height: "1px",
-              background: "var(--color-text-muted)",
-            }}
-          />
-          <span
-            style={{
-              fontSize: "11px",
-              letterSpacing: "0.18em",
-              textTransform: "uppercase",
-              color: "var(--color-accent)",
-            }}>
-            <Typewriter
-              words={[
-                "Frontend Engineer",
-                "UI Developer",
-                "React JS Developer",
-              ]}
-              loop={0} // 0 = infinite loop
-              cursor
-              cursorStyle="|"
-              typeSpeed={70}
-              deleteSpeed={50}
-              delaySpeed={1500}
-            />
-          </span>
-        </div>
+          {/* Label / Typewriter */}
+          <motion.div variants={itemVariants} style={{ marginBottom: "1rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <span
+                style={{
+                  width: "28px",
+                  height: "1px",
+                  background: "var(--color-text-muted)",
+                }}
+              />
+              <span
+                style={{
+                  fontSize: "11px",
+                  letterSpacing: "0.18em",
+                  textTransform: "uppercase",
+                  color: "var(--color-accent)",
+                  minHeight: "1.2em",
+                }}>
+                <Typewriter
+                  words={jobRoles}
+                  loop={0}
+                  cursor
+                  cursorStyle="|"
+                  typeSpeed={70}
+                  deleteSpeed={50}
+                  delaySpeed={1500}
+                />
+              </span>
+            </div>
+          </motion.div>
 
-        {/* Heading */}
-        <div style={{ marginBottom: "2rem" }}>
-          <h1
+          {/* Heading - First Name */}
+          <motion.h1
+            variants={itemVariants}
             style={{
               fontSize: "clamp(2.8rem, 5vw, 4.2rem)",
               fontWeight: 700,
               lineHeight: 1.05,
               letterSpacing: "-0.03em",
               margin: 0,
+              color: "var(--color-text)",
             }}>
-            Soumyajit
-          </h1>
-          <h1
+            {firstName}
+          </motion.h1>
+
+          {/* Heading - Last Name */}
+          <motion.h1
+            variants={itemVariants}
             style={{
               fontSize: "clamp(2.8rem, 5vw, 4.2rem)",
               fontWeight: 700,
@@ -144,38 +195,38 @@ export default function Home({ scrollProgress = 0 }) {
               letterSpacing: "-0.03em",
               color: "var(--color-accent)",
               margin: 0,
+              marginBottom: "2rem",
             }}>
-            Sengupta
-          </h1>
-        </div>
+            {lastName}
+          </motion.h1>
 
-        {/* Description */}
-        <p
-          style={{
-            fontSize: "1rem",
-            lineHeight: 1.75,
-            color: "var(--color-text-muted)",
-            maxWidth: "440px",
-            marginBottom: "2.5rem",
-          }}>
-          Building scalable, high-performance web applications with a focus on
-          modern UI/UX, clean architecture, and efficient state management.
-        </p>
+          {/* Description / Bio */}
+          <motion.p
+            variants={itemVariants}
+            style={{
+              fontSize: "1rem",
+              lineHeight: 1.75,
+              color: "var(--color-text-muted)",
+              maxWidth: "90%",
+              marginBottom: "1rem",
+            }}>
+            {bio}
+          </motion.p>
+        </motion.div>
 
         {/* Tech Marquee */}
-        <div
-          style={{
-            marginBottom: "3rem",
-            width: "100%",
-            overflow: "hidden", // Ensures marquee stays within bounds
-          }}>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: triggerAnimation ? 1 : 0 }}
+          transition={{ delay: 0.6, duration: 0.5 }}
+          style={{ marginBottom: "2rem", width: "60%", overflow: "hidden" }}>
           <Marquee
-            gradient={false} // Disabled gradient to match your clean border style
+            gradient={false}
             speed={40}
             pauseOnHover={true}
-            direction="right" // Sliding towards right as requested
+            direction="right"
             className="flex items-center">
-            {skills.map((tech, index) => (
+            {skillNames.map((tech, index) => (
               <span
                 key={`${tech}-${index}`}
                 style={{
@@ -186,17 +237,24 @@ export default function Home({ scrollProgress = 0 }) {
                   border: "0.5px solid var(--color-border)",
                   color: "var(--color-accent)",
                   borderRadius: "2px",
-                  marginRight: "12px", // Spacing between items in marquee
+                  marginRight: "12px",
                   display: "inline-block",
                 }}>
                 {tech}
               </span>
             ))}
           </Marquee>
-        </div>
+        </motion.div>
 
-        {/* Buttons */}
-        <div style={{ display: "flex", gap: "12px", marginBottom: "4rem" }}>
+        {/* Buttons & Stats */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{
+            opacity: triggerAnimation ? 1 : 0,
+            y: triggerAnimation ? 0 : 20,
+          }}
+          transition={{ delay: 0.8, duration: 0.5 }}
+          style={{ display: "flex", gap: "12px", marginBottom: "2rem" }}>
           <button
             style={{
               padding: "12px 28px",
@@ -226,13 +284,16 @@ export default function Home({ scrollProgress = 0 }) {
             }}>
             Contact Me
           </button>
-        </div>
+        </motion.div>
 
-        {/* Stats */}
-        <div style={{ display: "flex", gap: "2rem" }}>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: triggerAnimation ? 1 : 0 }}
+          transition={{ delay: 1.0, duration: 0.5 }}
+          style={{ display: "flex", gap: "2rem" }}>
           {[
-            { value: "3+", label: "Years exp." },
-            { value: "15+", label: "Skills" },
+            { value: `${yearsExp}+`, label: "Years exp." },
+            { value: `${skillsCount}+`, label: "Skills" },
             { value: "∞", label: "Cups of coffee" },
           ].map((stat, i, arr) => (
             <div key={stat.label} style={{ display: "flex", gap: "2rem" }}>
@@ -255,21 +316,17 @@ export default function Home({ scrollProgress = 0 }) {
                   {stat.label}
                 </div>
               </div>
-
               {i < arr.length - 1 && (
                 <div
-                  style={{
-                    width: "0.5px",
-                    background: "var(--color-border)",
-                  }}
+                  style={{ width: "0.5px", background: "var(--color-border)" }}
                 />
               )}
             </div>
           ))}
-        </div>
+        </motion.div>
       </div>
 
-      {/* RIGHT SIDE */}
+      {/* RIGHT SIDE (Spline) */}
       <div
         style={{
           width: "50%",
@@ -277,20 +334,18 @@ export default function Home({ scrollProgress = 0 }) {
           overflow: "visible",
           position: "relative",
         }}>
-        {/* Extended background */}
-        <div
+        {/* Spline Container with Fade In */}
+        <motion.div
           ref={splineContainerRef}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: triggerAnimation ? 1 : 0 }}
+          transition={{ duration: 1.5, ease: "easeOut" }} // Slower fade for smooth integration
           style={{
             width: "120%",
             height: "100%",
             transformOrigin: "center center",
-            willChange: "transform",
-            transition: "transform 0.1s linear",
-
-            WebkitMaskImage:
-              "linear-gradient(to right, rgba(0,0,0,1) 80%, rgba(0,0,0,0) 100%)",
-            maskImage:
-              "linear-gradient(to right, rgba(0,0,0,1) 80%, rgba(0,0,0,0) 100%)",
+            willChange: "transform, opacity",
+            // Remove transition here because Framer Motion handles it
           }}>
           {!splineError ? (
             <Spline
@@ -313,9 +368,9 @@ export default function Home({ scrollProgress = 0 }) {
               </div>
             </div>
           )}
-        </div>
+        </motion.div>
 
-        {/* Fade buffer (only extra 10%) */}
+        {/* Fade buffer */}
         <div
           style={{
             position: "absolute",
