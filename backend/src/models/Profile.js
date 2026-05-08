@@ -11,10 +11,29 @@ const educationSchema = new mongoose.Schema({
   Institution: String,
 });
 
+// ── NEW: each project can have multiple media (image or video) and multiple links
+const projectMediaSchema = new mongoose.Schema({
+  url: { type: String, required: true }, // Cloudinary secure_url
+  publicId: { type: String, required: true }, // Cloudinary public_id  (needed for deletion)
+  resourceType: {
+    type: String,
+    enum: ["image", "video"],
+    default: "image",
+  },
+});
+
 const projectSchema = new mongoose.Schema({
   Name: String,
   Description: String,
+
+  // OLD single Link kept as-is so existing data never breaks
   Link: String,
+
+  // NEW: multiple links  e.g. ["https://github.com/...", "https://live-demo.com"]
+  Links: [String],
+
+  // NEW: Cloudinary-backed media (images / videos)
+  Media: [projectMediaSchema],
 });
 
 const experienceSchema = new mongoose.Schema({
@@ -38,7 +57,8 @@ const profileSchema = new mongoose.Schema(
     FirstName: { type: String, required: true },
     LastName: { type: String, required: true },
 
-    JobRoles: [String], // ["Frontend Developer", "UI Developer", "React JS Developer"]
+    // Existing array – used for typewriter effect on the frontend
+    JobRoles: [String],
 
     Bio: String,
     Skills: [skillSchema],
@@ -64,6 +84,19 @@ const profileSchema = new mongoose.Schema(
     },
 
     Projects: [projectSchema],
+
+    // ── NEW: Profile picture (single Cloudinary image)
+    ProfilePicture: {
+      url: String, // Cloudinary secure_url
+      publicId: String, // Cloudinary public_id
+    },
+
+    // ── NEW: Resume (single Cloudinary file – PDF or DOC)
+    Resume: {
+      url: String, // Cloudinary secure_url
+      publicId: String, // Cloudinary public_id
+      fileName: String, // original file name shown to visitors
+    },
   },
   { timestamps: true },
 );
