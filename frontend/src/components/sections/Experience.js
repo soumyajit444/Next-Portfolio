@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import { createPortal } from "react-dom";
 
 const SECTION_START = 0.62;
@@ -8,50 +8,61 @@ const SECTION_END = 0.8;
 const SECTION_SPAN = SECTION_END - SECTION_START;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Experience data
+// Helper: Format date from ISO string to "MMM YYYY"
 // ─────────────────────────────────────────────────────────────────────────────
-const EXPERIENCES = [
-  {
-    id: 0,
-    side: "right",
-    date: "Jan 2021 – Dec 2022",
-    role: "Frontend Engineer",
-    company: "Acme Corp",
-    location: "Remote",
-    description:
-      "Built and shipped a design system used across 12 product teams. Led migration from class components to hooks, reducing bundle size by 34% and improving Lighthouse scores by 20 points.",
-    tags: ["React", "TypeScript", "Figma"],
-    nodeAt: 0.13,
-  },
-  {
-    id: 1,
-    side: "left",
-    date: "Jan 2023 – Present",
-    role: "Senior UI Engineer",
-    company: "Nova Studio",
-    location: "Kolkata, IN",
-    description:
-      "Architected a real-time collaboration layer for a SaaS canvas editor. Mentored a team of four engineers and drove a 2× improvement in page-load performance through edge caching and code-splitting strategies.",
-    tags: ["Next.js", "WebSockets", "GSAP"],
-    nodeAt: 0.56,
-  },
-];
+const formatDate = (dateStr) => {
+  if (!dateStr) return "Present";
+  const date = new Date(dateStr);
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    year: "numeric",
+  });
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helper: Transform API work experience to UI format (STATIC nodeAt for 2 items)
+// ─────────────────────────────────────────────────────────────────────────────
+const transformExperiences = (workExperiences) => {
+  if (!workExperiences || workExperiences.length === 0) return [];
+
+  // Take only first 2 experiences and map to static layout
+  return workExperiences.slice(0, 2).map((exp, index) => {
+    const startDate = formatDate(exp.StartDate);
+    const endDate = exp.EndDate ? formatDate(exp.EndDate) : "Present";
+
+    // STATIC nodeAt positions - matching your original design
+    const staticNodePositions = [0.13, 0.56];
+    const staticSides = ["right", "left"];
+
+    return {
+      id: exp._id || index,
+      side: staticSides[index], // right, then left
+      date: `${startDate} – ${endDate}`,
+      role: exp.Role,
+      company: exp.CompanyName,
+      location: exp.WorkLocation,
+      description: exp.Description,
+      tags: exp.KeySkills || [],
+      nodeAt: staticNodePositions[index], // FIXED: 0.13, 0.56
+    };
+  });
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ProgressLine
 // ─────────────────────────────────────────────────────────────────────────────
-function ProgressLine() {
+function ProgressLine({ experiences }) {
   const lineTrackRef = useRef(null);
   const lineFillRef = useRef(null);
 
-  // refs for nodes, cards, AND pills
-  const nodeRefs = useRef(EXPERIENCES.map(() => React.createRef()));
-  const cardRefs = useRef(EXPERIENCES.map(() => React.createRef()));
-  const pillRefs = useRef(EXPERIENCES.map(() => React.createRef())); // ← NEW
+  // Initialize refs for exactly 2 experiences (static)
+  const nodeRefs = useRef([React.createRef(), React.createRef()]);
+  const cardRefs = useRef([React.createRef(), React.createRef()]);
+  const pillRefs = useRef([React.createRef(), React.createRef()]);
 
-  // reveal state trackers
-  const cardRevealedRef = useRef(EXPERIENCES.map(() => false));
-  const pillRevealedRef = useRef(EXPERIENCES.map(() => false)); // ← NEW
+  // reveal state trackers (static length)
+  const cardRevealedRef = useRef([false, false]);
+  const pillRevealedRef = useRef([false, false]);
 
   useEffect(() => {
     const handleBgScroll = (e) => {
@@ -86,11 +97,11 @@ function ProgressLine() {
       lineTrack.style.opacity = opacity;
       lineFill.style.height = `${lineHeight}vh`;
 
-      // ── node + card + pill reveal ─────────────────────────────────────────
-      EXPERIENCES.forEach((exp, i) => {
-        const nodeDot = nodeRefs.current[i].current;
-        const card = cardRefs.current[i].current;
-        const pill = pillRefs.current[i].current; // ← NEW
+      // ── node + card + pill reveal (only for 2 items) ─────────────────────
+      experiences.slice(0, 2).forEach((exp, i) => {
+        const nodeDot = nodeRefs.current[i]?.current;
+        const card = cardRefs.current[i]?.current;
+        const pill = pillRefs.current[i]?.current;
 
         if (!nodeDot || !card || !pill) return;
 
@@ -123,11 +134,6 @@ function ProgressLine() {
           pillRevealedRef.current[i] = true;
           pill.style.opacity = "1";
           pill.style.transform = "translateY(0) translateX(0)";
-          // Optional: tiny stagger for premium feel (uncomment if desired)
-          // setTimeout(() => {
-          //   pill.style.opacity = "1";
-          //   pill.style.transform = "translateY(0) translateX(0)";
-          // }, 50);
         }
         if (!activated && pillRevealedRef.current[i]) {
           pillRevealedRef.current[i] = false;
@@ -142,7 +148,7 @@ function ProgressLine() {
 
     window.addEventListener("bgscroll", handleBgScroll);
     return () => window.removeEventListener("bgscroll", handleBgScroll);
-  }, []);
+  }, [experiences]);
 
   return (
     <div
@@ -193,8 +199,8 @@ function ProgressLine() {
         />
       </div>
 
-      {/* ── Experience nodes + pills + cards ─────────────────────────────── */}
-      {EXPERIENCES.map((exp, i) => (
+      {/* ── Experience nodes + pills + cards (max 2) ─────────────────────── */}
+      {experiences.slice(0, 2).map((exp, i) => (
         <React.Fragment key={exp.id}>
           {/* Node dot on the line */}
           <div
@@ -217,7 +223,7 @@ function ProgressLine() {
             }}
           />
 
-          {/* Date pill (now animated) */}
+          {/* Date pill (animated) */}
           <DatePill exp={exp} pillRef={pillRefs.current[i]} />
 
           {/* Experience card */}
@@ -229,7 +235,7 @@ function ProgressLine() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// DatePill — now accepts pillRef and has animated styles
+// DatePill component
 // ─────────────────────────────────────────────────────────────────────────────
 function DatePill({ exp, pillRef }) {
   const pillSide = exp.side === "right" ? "left" : "right";
@@ -258,7 +264,6 @@ function DatePill({ exp, pillRef }) {
         boxShadow: "0 4px 14px rgba(124,58,237,0.45)",
         pointerEvents: "none",
         zIndex: 10000,
-        // ── Animation styles (match card) ─────────────────────────────────
         opacity: 0,
         transform: initialTransform,
         transition:
@@ -270,7 +275,7 @@ function DatePill({ exp, pillRef }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ExperienceCard (unchanged)
+// ExperienceCard component
 // ─────────────────────────────────────────────────────────────────────────────
 function ExperienceCard({ exp, cardRef }) {
   const isRight = exp.side === "right";
@@ -305,7 +310,7 @@ function ExperienceCard({ exp, cardRef }) {
         zIndex: 10000,
         textAlign: isRight ? "left" : "right",
       }}>
-      {/* Role + company */}
+      {/* Role + location */}
       <div
         style={{
           fontSize: "17px",
@@ -360,7 +365,7 @@ function ExperienceCard({ exp, cardRef }) {
         {exp.description}
       </div>
 
-      {/* Tags */}
+      {/* Tags/Skills */}
       <div
         style={{
           display: "flex",
@@ -391,15 +396,38 @@ function ExperienceCard({ exp, cardRef }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Experience section (unchanged shell)
+// Main Experience component - accepts profile prop
 // ─────────────────────────────────────────────────────────────────────────────
-export default function Experience() {
+export default function Experience({ profile }) {
   const containerRef = useRef(null);
   const [mounted, setMounted] = useState(false);
+
+  // Transform API data to UI format with STATIC positions
+  const experiences = useMemo(() => {
+    return transformExperiences(profile?.WorkExperience || []);
+  }, [profile]);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Handle empty state gracefully
+  if (experiences.length === 0) {
+    return (
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "var(--color-text-muted)",
+          fontSize: "18px",
+        }}>
+        No work experience to display.
+      </div>
+    );
+  }
 
   return (
     <div
@@ -412,7 +440,8 @@ export default function Experience() {
         alignItems: "center",
         justifyContent: "center",
       }}>
-      {mounted && createPortal(<ProgressLine />, document.body)}
+      {mounted &&
+        createPortal(<ProgressLine experiences={experiences} />, document.body)}
     </div>
   );
 }

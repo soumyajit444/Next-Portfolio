@@ -131,7 +131,6 @@ export default function SlugPage() {
       style={{
         overflowX: "hidden",
         position: "relative",
-        background: "var(--color-bg)",
       }}>
       {!loaded && (
         <LoadingScreen
