@@ -8,21 +8,21 @@ body {
   padding: 0;
   box-sizing: border-box;
 
-  /* Light mode — dark circle */
+  /* Light mode — dark circle cursor (FIXED: added data: prefix) */
   cursor:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Ccircle cx='10' cy='10' r='8' fill='none' stroke='%230a0a0a' stroke-width='2'/%3E%3C/svg%3E")
       10 10,
-    none !important;
+    auto !important;
 }
 
-/* Dark mode — white circle */
+/* Dark mode — white circle cursor (FIXED: added data: prefix) */
 [data-theme="dark"] *,
 [data-theme="dark"] html,
 [data-theme="dark"] body {
   cursor:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Ccircle cx='10' cy='10' r='8' fill='none' stroke='%23e0e0e0' stroke-width='2'/%3E%3C/svg%3E")
       10 10,
-    none !important;
+    auto !important;
 }
 
 body {
@@ -32,4 +32,28 @@ body {
   transition:
     background 0.3s ease,
     color 0.3s ease;
+}
+
+/* Native date input dark mode support */
+[data-theme="dark"] input[type="date"] {
+  color-scheme: dark;
+}
+
+input[type="date"] {
+  cursor: pointer;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  background: var(--color-border, rgba(0, 0, 0, 0.1));
+}
+
+[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
 }

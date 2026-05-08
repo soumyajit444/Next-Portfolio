@@ -1,11 +1,29 @@
 "use client";
-import { Mail, Phone, Link } from "lucide-react";
+import { Mail, Phone, Link, MapPin, Calendar, Building2 } from "lucide-react";
 
 export default function ProfileModal({ profile, onClose }) {
   if (!profile) return null;
+
   const fullName =
     profile.Name ||
     `${profile.FirstName || ""} ${profile.LastName || ""}`.trim();
+
+  // ✅ Format date from YYYY-MM-DD to "MMM YYYY"
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "Present";
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  // ✅ Format date range
+  const formatDateRange = (start, end) => {
+    const startFormatted = formatDate(start);
+    const endFormatted = end ? formatDate(end) : "Present";
+    return `${startFormatted} - ${endFormatted}`;
+  };
 
   const Section = ({ title, children }) => (
     <div style={{ marginBottom: "24px" }}>
@@ -13,7 +31,7 @@ export default function ProfileModal({ profile, onClose }) {
         style={{
           fontSize: "11px",
           letterSpacing: "1.5px",
-          color: "#6366f1", // Accent
+          color: "#6366f1",
           textTransform: "uppercase",
           fontWeight: 600,
           marginBottom: "10px",
@@ -87,7 +105,7 @@ export default function ProfileModal({ profile, onClose }) {
             transition: "background 0.2s",
           }}
           onMouseEnter={(e) =>
-            (e.currentTarget.style.background = "rgba(255,255,255,0.1)")
+            (e.currentTarget.style.background = "var(--color-border-muted)")
           }
           onMouseLeave={(e) =>
             (e.currentTarget.style.background = "transparent")
@@ -145,15 +163,47 @@ export default function ProfileModal({ profile, onClose }) {
               }}>
               {fullName}
             </div>
-            <div
-              style={{ color: "#6366f1", fontWeight: 500, marginTop: "4px" }}>
-              {profile.CurrentJobRole}
-            </div>
+
+            {/* ✅ Display JobRoles as chips or primary role */}
+            {profile.JobRoles?.length > 0 && (
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: "6px",
+                  marginTop: "6px",
+                }}>
+                {profile.JobRoles.slice(0, 2).map((role, i) => (
+                  <span
+                    key={i}
+                    style={{
+                      padding: "2px 10px",
+                      borderRadius: "12px",
+                      background: "rgba(99, 102, 241, 0.1)",
+                      color: "#6366f1",
+                      fontSize: "11px",
+                      fontWeight: 500,
+                    }}>
+                    {role}
+                  </span>
+                ))}
+                {profile.JobRoles.length > 2 && (
+                  <span
+                    style={{
+                      color: "var(--color-text-muted)",
+                      fontSize: "11px",
+                    }}>
+                    +{profile.JobRoles.length - 2} more
+                  </span>
+                )}
+              </div>
+            )}
+
             <div
               style={{
                 color: "var(--color-text-muted)",
                 fontSize: "13px",
-                marginTop: "2px",
+                marginTop: "4px",
               }}>
               {profile.YearsOfExperience} years experience
             </div>
@@ -164,12 +214,10 @@ export default function ProfileModal({ profile, onClose }) {
         <div
           style={{
             overflowY: "auto",
-            // Allow the div to take remaining height
             flex: 1,
-            // Padding Top/Bottom/Left/Right
-            // Right padding (40px) ensures content doesn't touch the scrollbar area
             padding: "24px 40px 32px 32px",
           }}>
+          {/* ✅ Bio Section */}
           {profile.Bio && (
             <Section title="Bio">
               <p
@@ -177,12 +225,14 @@ export default function ProfileModal({ profile, onClose }) {
                   color: "var(--color-text-muted)",
                   lineHeight: "1.7",
                   fontSize: "14px",
+                  whiteSpace: "pre-line",
                 }}>
                 {profile.Bio}
               </p>
             </Section>
           )}
 
+          {/* ✅ Skills Section */}
           {profile.Skills?.length > 0 && (
             <Section title="Skills">
               <div
@@ -193,7 +243,6 @@ export default function ProfileModal({ profile, onClose }) {
                 }}>
                 {profile.Skills.map((s, i) => (
                   <div key={i}>
-                    {/* Skill Header: Name and Rating Text */}
                     <div
                       style={{
                         display: "flex",
@@ -209,23 +258,20 @@ export default function ProfileModal({ profile, onClose }) {
                         {s.Rating}/10
                       </span>
                     </div>
-
-                    {/* Progress Bar Background */}
                     <div
                       style={{
                         height: "6px",
                         width: "100%",
-                        background: "var(--color-border-muted)", // Uses your border color for subtle track
+                        background: "var(--color-border-muted)",
                         borderRadius: "10px",
                         overflow: "hidden",
                       }}>
-                      {/* Progress Bar Fill */}
                       <div
                         style={{
                           height: "100%",
                           width: `${(s.Rating / 10) * 100}%`,
                           background:
-                            "linear-gradient(90deg, #6366f1, #8b5cf6)", // Matches your avatar gradient
+                            "linear-gradient(90deg, #6366f1, #8b5cf6)",
                           borderRadius: "10px",
                           transition: "width 0.5s ease-in-out",
                         }}
@@ -237,6 +283,7 @@ export default function ProfileModal({ profile, onClose }) {
             </Section>
           )}
 
+          {/* ✅ Industry Tools Section */}
           {profile.IndustryTools?.length > 0 && (
             <Section title="Tools">
               <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
@@ -247,6 +294,7 @@ export default function ProfileModal({ profile, onClose }) {
             </Section>
           )}
 
+          {/* ✅ Education Section */}
           {profile.Education?.length > 0 && (
             <Section title="Education">
               {profile.Education.map((e, i) => (
@@ -279,6 +327,157 @@ export default function ProfileModal({ profile, onClose }) {
             </Section>
           )}
 
+          {/* ✅ Work Experience Section - NEW */}
+          {profile.WorkExperience?.length > 0 && (
+            <Section title="Work Experience">
+              {profile.WorkExperience.map((exp, i) => (
+                <div
+                  key={i}
+                  style={{
+                    padding: "16px",
+                    background: "var(--color-bg)",
+                    borderRadius: "12px",
+                    marginBottom: "12px",
+                    border: "1px solid var(--color-border)",
+                  }}>
+                  {/* Header */}
+                  <div style={{ marginBottom: "10px" }}>
+                    <div
+                      style={{
+                        color: "var(--color-text)",
+                        fontWeight: 600,
+                        fontSize: "15px",
+                        marginBottom: "4px",
+                      }}>
+                      {exp.Role}
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        color: "#6366f1",
+                        fontSize: "13px",
+                        fontWeight: 500,
+                      }}>
+                      <Building2 size={14} />
+                      {exp.CompanyName}
+                    </div>
+                  </div>
+
+                  {/* Date & Location */}
+                  <div
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: "12px",
+                      marginBottom: "10px",
+                      fontSize: "12px",
+                      color: "var(--color-text-muted)",
+                    }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "4px",
+                      }}>
+                      <Calendar size={14} />
+                      {formatDateRange(exp.StartDate, exp.EndDate)}
+                    </div>
+                    {exp.WorkLocation && (
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "4px",
+                        }}>
+                        <MapPin size={14} />
+                        {exp.WorkLocation}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Description */}
+                  {exp.Description && (
+                    <p
+                      style={{
+                        color: "var(--color-text-muted)",
+                        fontSize: "13px",
+                        lineHeight: "1.6",
+                        marginBottom: "10px",
+                        whiteSpace: "pre-line",
+                      }}>
+                      {exp.Description}
+                    </p>
+                  )}
+
+                  {/* Key Skills */}
+                  {exp.KeySkills?.length > 0 && (
+                    <div
+                      style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                      {exp.KeySkills.map((skill, j) => (
+                        <span
+                          key={j}
+                          style={{
+                            padding: "3px 10px",
+                            borderRadius: "14px",
+                            background: "rgba(99, 102, 241, 0.1)",
+                            color: "#6366f1",
+                            fontSize: "11px",
+                            fontWeight: 500,
+                          }}>
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </Section>
+          )}
+
+          {/* ✅ Address Section - NEW */}
+          {(profile.Address?.Street ||
+            profile.Address?.City ||
+            profile.Address?.State ||
+            profile.Address?.Country) && (
+            <Section title="Location">
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: "10px",
+                  color: "var(--color-text-muted)",
+                  fontSize: "13px",
+                }}>
+                <MapPin size={16} style={{ marginTop: "2px", flexShrink: 0 }} />
+                <div style={{ lineHeight: "1.6" }}>
+                  {profile.Address.Street && (
+                    <div>{profile.Address.Street}</div>
+                  )}
+                  {[
+                    profile.Address.State,
+                    profile.Address.Pin,
+                    profile.Address.Country,
+                  ]
+                    .filter(Boolean)
+                    .join(", ") && (
+                    <div>
+                      {[
+                        profile.Address.State,
+                        profile.Address.Pin,
+                        profile.Address.Country,
+                      ]
+                        .filter(Boolean)
+                        .join(", ")}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </Section>
+          )}
+
+          {/* ✅ Contact Section */}
           {profile.ContactInfo && (
             <Section title="Contact">
               <div
@@ -360,6 +559,8 @@ export default function ProfileModal({ profile, onClose }) {
               </div>
             </Section>
           )}
+
+          {/* ✅ Hobbies Section */}
           {profile.Hobbies?.length > 0 && (
             <Section title="Hobbies">
               <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>

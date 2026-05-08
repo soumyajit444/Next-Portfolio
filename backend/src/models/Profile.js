@@ -35,22 +35,20 @@ const profileSchema = new mongoose.Schema(
       unique: true,
     },
 
-    // 🔥 UPDATED
     FirstName: { type: String, required: true },
     LastName: { type: String, required: true },
 
-    // 🔥 NEW FIELD
-    JobRoles: [String], // ["Frontend Developer", "Backend Developer"]
+    JobRoles: [String], // ["Frontend Developer", "UI Developer", "React JS Developer"]
 
     Bio: String,
-
     Skills: [skillSchema],
     IndustryTools: [String],
-
     YearsOfExperience: Number,
 
     Education: [educationSchema],
     Hobbies: [String],
+
+    WorkExperience: [experienceSchema],
 
     Address: {
       Street: String,
@@ -66,11 +64,6 @@ const profileSchema = new mongoose.Schema(
     },
 
     Projects: [projectSchema],
-
-    WorkExperience: {
-      Exp1: experienceSchema,
-      Exp2: experienceSchema,
-    },
   },
   { timestamps: true },
 );

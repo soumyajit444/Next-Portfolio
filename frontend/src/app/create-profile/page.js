@@ -1,9 +1,11 @@
 "use client";
+import React from "react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import SecretKeyGate from "@/components/admin/SecretKeyGate";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import { createProfile } from "@/services/profileService";
+import DatePicker from "@/components/ui/DatePicker";
 
 // Dynamic styles using CSS variables
 const inputStyle = {
@@ -18,7 +20,7 @@ const inputStyle = {
   boxSizing: "border-box",
 };
 
-// Chip Input Component for Tools/Hobbies
+// Chip Input Component - ✅ Using --color-border-muted for theme support
 const ChipInput = ({ items, onChange }) => {
   const [inputValue, setInputValue] = useState("");
 
@@ -54,8 +56,8 @@ const ChipInput = ({ items, onChange }) => {
         <span
           key={index}
           style={{
-            background: "#2a2a2a",
-            color: "#fff",
+            background: "var(--color-border-muted)",
+            color: "var(--color-text)",
             padding: "4px 10px",
             borderRadius: "16px",
             fontSize: "13px",
@@ -101,19 +103,20 @@ const ChipInput = ({ items, onChange }) => {
 const Label = ({ children }) => (
   <div
     style={{
-      fontSize: "11px",
+      fontSize: "12px",
       color: "var(--color-text-muted)",
-      letterSpacing: "1.2px",
+      letterSpacing: "1px",
+      display: "block",
+      marginBottom: "6px",
       textTransform: "uppercase",
       fontWeight: 600,
-      marginBottom: "6px",
     }}>
     {children}
   </div>
 );
 
 const Field = ({ label, children }) => (
-  <div style={{ marginBottom: "18px" }}>
+  <div style={{ marginBottom: "14px" }}>
     <Label>{label}</Label>
     {children}
   </div>
@@ -130,13 +133,32 @@ export default function CreateProfilePage() {
     profileSlug: "",
     FirstName: "",
     LastName: "",
-    CurrentJobRole: "",
+
+    // Job Roles (array of strings)
+    JobRoles: [],
+
     Bio: "",
     YearsOfExperience: "",
+
     Skills: [{ Name: "", Rating: "" }],
-    IndustryTools: [], // Changed to empty array for chips
+    IndustryTools: [],
+
     Education: [{ Degree: "", Institution: "", PassOutYear: "" }],
-    Hobbies: [], // Changed to empty array for chips
+
+    // Work Experience (dynamic array)
+    WorkExperience: [
+      {
+        CompanyName: "",
+        Role: "",
+        StartDate: "",
+        EndDate: "",
+        Description: "",
+        WorkLocation: "",
+        KeySkills: [],
+      },
+    ],
+
+    Hobbies: [],
     Address: { Street: "", State: "", Pin: "", Country: "" },
     ContactInfo: { PhoneNo: "", Email: "", LinkedIn: "" },
   });
@@ -167,6 +189,38 @@ export default function CreateProfilePage() {
   const removeItem = (arr, idx) =>
     setForm({ ...form, [arr]: form[arr].filter((_, i) => i !== idx) });
 
+  // ✅ Helpers for Work Experience
+  const addExperience = () => {
+    setForm({
+      ...form,
+      WorkExperience: [
+        ...form.WorkExperience,
+        {
+          CompanyName: "",
+          Role: "",
+          StartDate: "",
+          EndDate: "",
+          Description: "",
+          WorkLocation: "",
+          KeySkills: [],
+        },
+      ],
+    });
+  };
+
+  const removeExperience = (index) => {
+    setForm({
+      ...form,
+      WorkExperience: form.WorkExperience.filter((_, i) => i !== index),
+    });
+  };
+
+  const updateExperience = (index, field, value) => {
+    const newExp = [...form.WorkExperience];
+    newExp[index] = { ...newExp[index], [field]: value };
+    setForm({ ...form, WorkExperience: newExp });
+  };
+
   const handleSubmit = async () => {
     setLoading(true);
     setError("");
@@ -174,16 +228,36 @@ export default function CreateProfilePage() {
       const payload = {
         ...form,
         YearsOfExperience: Number(form.YearsOfExperience),
+
+        // Filter & format Skills
         Skills: form.Skills.filter((s) => s.Name).map((s) => ({
           ...s,
           Rating: Number(s.Rating),
         })),
+
+        // Filter arrays
         IndustryTools: form.IndustryTools.filter(Boolean),
         Hobbies: form.Hobbies.filter(Boolean),
+        JobRoles: form.JobRoles.filter(Boolean),
+
+        // Filter & clean Education
         Education: form.Education.filter((e) => e.Degree),
+
+        // ✅ Filter & clean WorkExperience
+        WorkExperience: form.WorkExperience.filter(
+          (exp) => exp.CompanyName || exp.Role,
+        ).map((exp) => ({
+          ...exp,
+          StartDate: exp.StartDate || "",
+          EndDate: exp.EndDate || "",
+          KeySkills: Array.isArray(exp.KeySkills)
+            ? exp.KeySkills.filter(Boolean)
+            : [],
+        })),
+
         Projects: [],
-        WorkExperience: {},
       };
+
       await createProfile(payload, secret);
       setSuccess(true);
       setTimeout(() => router.push("/profile-management"), 2000);
@@ -316,13 +390,6 @@ export default function CreateProfilePage() {
               }
             />
           </Field>
-          <Field label="Current Job Role">
-            <input
-              style={inputStyle}
-              value={form.CurrentJobRole}
-              onChange={(e) => set("CurrentJobRole", e.target.value)}
-            />
-          </Field>
           <Field label="Bio">
             <textarea
               style={{ ...inputStyle, minHeight: "90px", resize: "vertical" }}
@@ -344,6 +411,42 @@ export default function CreateProfilePage() {
               height: "1px",
               background: "var(--color-border)",
               margin: "28px 0",
+            }}
+          />
+
+          {/* ✅ Job Roles (Chips) */}
+          <div style={{ marginBottom: "20px" }}>
+            <div
+              style={{
+                fontSize: "13px",
+                color: "#6366f1",
+                letterSpacing: "1.5px",
+                textTransform: "uppercase",
+                fontWeight: 600,
+                marginBottom: "16px",
+              }}>
+              Job Roles
+            </div>
+            <ChipInput
+              items={form.JobRoles}
+              onChange={(newItems) => setForm({ ...form, JobRoles: newItems })}
+            />
+            <div
+              style={{
+                fontSize: "11px",
+                color: "var(--color-text-muted)",
+                marginTop: "6px",
+              }}>
+              Add roles like: Frontend Developer, UI Developer, React JS
+              Developer
+            </div>
+          </div>
+
+          <div
+            style={{
+              height: "1px",
+              background: "var(--color-border)",
+              margin: "20px 0",
             }}
           />
 
@@ -413,7 +516,7 @@ export default function CreateProfilePage() {
               padding: "8px 16px",
               cursor: "pointer",
               fontSize: "13px",
-              marginBottom: "16px",
+              marginTop: "8px",
             }}>
             + Add Skill
           </button>
@@ -541,10 +644,205 @@ export default function CreateProfilePage() {
               padding: "8px 16px",
               cursor: "pointer",
               fontSize: "13px",
-              marginBottom: "16px",
+              marginTop: "8px",
             }}>
             + Add Education
           </button>
+
+          <div
+            style={{
+              height: "1px",
+              background: "var(--color-border)",
+              margin: "20px 0",
+            }}
+          />
+
+          {/* ✅ Work Experience Section */}
+          <div style={{ marginBottom: "20px" }}>
+            <div
+              style={{
+                fontSize: "13px",
+                color: "#6366f1",
+                letterSpacing: "1.5px",
+                textTransform: "uppercase",
+                fontWeight: 600,
+                marginBottom: "16px",
+              }}>
+              Work Experience
+            </div>
+
+            {form.WorkExperience.map((exp, i) => (
+              <div
+                key={i}
+                style={{
+                  background: "var(--color-bg)",
+                  border: "1px solid var(--color-border)",
+                  borderRadius: "12px",
+                  padding: "16px",
+                  marginBottom: "12px",
+                }}>
+                {/* Header with Remove */}
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: "12px",
+                  }}>
+                  <strong style={{ color: "var(--color-text)" }}>
+                    Experience #{i + 1}
+                  </strong>
+                  {form.WorkExperience.length > 1 && (
+                    <button
+                      onClick={() => removeExperience(i)}
+                      style={{
+                        background: "transparent",
+                        border: "none",
+                        color: "#ef4444",
+                        cursor: "pointer",
+                        fontSize: "13px",
+                        fontWeight: 500,
+                      }}>
+                      Remove
+                    </button>
+                  )}
+                </div>
+
+                {/* Company & Role */}
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: "0 14px",
+                  }}>
+                  <Field label="Company Name">
+                    <input
+                      style={inputStyle}
+                      value={exp.CompanyName}
+                      onChange={(e) =>
+                        updateExperience(i, "CompanyName", e.target.value)
+                      }
+                      placeholder="e.g. Google, Microsoft"
+                    />
+                  </Field>
+                  <Field label="Job Role">
+                    <input
+                      style={inputStyle}
+                      value={exp.Role}
+                      onChange={(e) =>
+                        updateExperience(i, "Role", e.target.value)
+                      }
+                      placeholder="e.g. Frontend Developer"
+                    />
+                  </Field>
+                </div>
+
+                {/* 📅 Start & End Date - Native Date Input */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  {/* Start Date */}
+                  <Field label="Start Date">
+                    <DatePicker
+                      id={`start-date-${i}`}
+                      value={exp.StartDate || ""}
+                      onChange={(date) =>
+                        updateExperience(i, "StartDate", date)
+                      }
+                      max={exp.EndDate || undefined}
+                      placeholder="Select start date"
+                    />
+                  </Field>
+
+                  {/* End Date */}
+                  <Field label="End Date">
+                    <DatePicker
+                      id={`end-date-${i}`}
+                      value={exp.EndDate || ""}
+                      onChange={(date) => updateExperience(i, "EndDate", date)}
+                      min={exp.StartDate || undefined}
+                      placeholder="Present"
+                    />
+                  </Field>
+                </div>
+
+                {/* ✅ Currently Working Here Checkbox */}
+                <div className="mb-4">
+                  <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={!exp.EndDate}
+                      onChange={(e) => {
+                        updateExperience(
+                          i,
+                          "EndDate",
+                          e.target.checked ? "" : exp.EndDate,
+                        );
+                      }}
+                      className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-gray-800"
+                    />
+                    I currently work here
+                  </label>
+                </div>
+
+                {/* Work Location */}
+                <Field label="Work Location">
+                  <input
+                    style={inputStyle}
+                    value={exp.WorkLocation}
+                    onChange={(e) =>
+                      updateExperience(i, "WorkLocation", e.target.value)
+                    }
+                    placeholder="e.g. Remote, Kolkata, India"
+                  />
+                </Field>
+
+                {/* Description */}
+                <Field label="Description">
+                  <textarea
+                    style={{
+                      ...inputStyle,
+                      minHeight: "70px",
+                      resize: "vertical",
+                    }}
+                    value={exp.Description}
+                    onChange={(e) =>
+                      updateExperience(i, "Description", e.target.value)
+                    }
+                    placeholder="Brief description of your role and responsibilities..."
+                  />
+                </Field>
+
+                {/* ✅ Key Skills as Chip Input (matching EditProfileModal) */}
+                <Field label="Key Skills">
+                  <ChipInput
+                    items={exp.KeySkills || []}
+                    onChange={(newSkills) =>
+                      updateExperience(i, "KeySkills", newSkills)
+                    }
+                  />
+                </Field>
+              </div>
+            ))}
+
+            {/* Add Experience Button */}
+            <button
+              onClick={addExperience}
+              style={{
+                background: "transparent",
+                border: "1px dashed var(--color-border)",
+                borderRadius: "8px",
+                color: "var(--color-text-muted)",
+                padding: "8px 16px",
+                cursor: "pointer",
+                fontSize: "13px",
+                marginTop: "8px",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+              }}>
+              <span style={{ fontSize: "16px", lineHeight: 1 }}>+</span>
+              Add Work Experience
+            </button>
+          </div>
 
           <div
             style={{

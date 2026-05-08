@@ -83,7 +83,7 @@ export default function ProfileCard({ profile, onView, onEdit, onDelete }) {
           marginBottom: "8px",
           fontWeight: 500,
         }}>
-        {profile.CurrentJobRole || "—"}
+        {profile.JobRoles[0] || "—"}
       </div>
       <div
         style={{
