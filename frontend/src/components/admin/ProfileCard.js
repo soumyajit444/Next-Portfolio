@@ -1,32 +1,38 @@
 "use client";
+import { Pencil, Trash2 } from "lucide-react";
 
 export default function ProfileCard({ profile, onView, onEdit, onDelete }) {
   const fullName =
     profile.Name ||
     `${profile.FirstName || ""} ${profile.LastName || ""}`.trim();
+
   const initials = fullName
     .split(" ")
+    .filter((n) => n) // Remove empty strings
     .map((n) => n[0])
     .join("")
     .toUpperCase()
     .slice(0, 2);
 
+  // Safe access to profile picture URL
+  const profilePicUrl = profile.ProfilePicture?.url;
+
   return (
     <div
       onClick={() => onView(profile)}
       style={{
-        background: "var(--color-bg)", // Dynamic Background
-        border: "1px solid var(--color-border)", // Dynamic Border
+        background: "var(--color-bg)",
+        border: "1px solid var(--color-border)",
         borderRadius: "16px",
         padding: "28px 24px",
         cursor: "pointer",
         transition: "border-color 0.2s, transform 0.2s, box-shadow 0.2s",
         position: "relative",
         overflow: "hidden",
-        color: "var(--color-text)", // Ensure text inherits correctly
+        color: "var(--color-text)",
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.borderColor = "#6366f1"; // Keep accent color fixed or use var(--color-accent)
+        e.currentTarget.style.borderColor = "#6366f1";
         e.currentTarget.style.transform = "translateY(-4px)";
         e.currentTarget.style.boxShadow = "0 12px 40px rgba(99,102,241,0.12)";
       }}
@@ -50,20 +56,27 @@ export default function ProfileCard({ profile, onView, onEdit, onDelete }) {
           color: "#fff",
           marginBottom: "16px",
           flexShrink: 0,
+          overflow: "hidden", // Ensures image stays within circular border
         }}>
-        {profile.ProfilePicture ? (
+        {profilePicUrl ? (
           <img
-            src={profile.ProfilePicture}
+            src={profilePicUrl}
             alt={fullName}
             style={{
               width: "100%",
               height: "100%",
               borderRadius: "50%",
               objectFit: "cover",
+              display: "block", // Removes extra space below image
+            }}
+            onError={(e) => {
+              // Fallback to initials if image fails to load
+              e.currentTarget.style.display = "none";
+              e.currentTarget.parentElement.innerHTML = initials;
             }}
           />
         ) : (
-          initials
+          <span style={{ lineHeight: 1 }}>{initials}</span>
         )}
       </div>
 
@@ -71,7 +84,7 @@ export default function ProfileCard({ profile, onView, onEdit, onDelete }) {
         style={{
           fontWeight: 700,
           fontSize: "17px",
-          color: "var(--color-text)", // Dynamic Text
+          color: "var(--color-text)",
           marginBottom: "4px",
         }}>
         {fullName}
@@ -79,16 +92,16 @@ export default function ProfileCard({ profile, onView, onEdit, onDelete }) {
       <div
         style={{
           fontSize: "13px",
-          color: "#6366f1", // Accent Color
+          color: "#6366f1",
           marginBottom: "8px",
           fontWeight: 500,
         }}>
-        {profile.JobRoles[0] || "—"}
+        {profile.JobRoles?.[0] || "—"}
       </div>
       <div
         style={{
           fontSize: "13px",
-          color: "var(--color-text-muted)", // Muted Text
+          color: "var(--color-text-muted)",
           marginBottom: "4px",
         }}>
         {profile.YearsOfExperience
@@ -98,7 +111,7 @@ export default function ProfileCard({ profile, onView, onEdit, onDelete }) {
       <div
         style={{
           fontSize: "12px",
-          color: "var(--color-text-muted)", // Muted Text
+          color: "var(--color-text-muted)",
         }}>
         {profile.profileSlug}
       </div>
@@ -111,14 +124,19 @@ export default function ProfileCard({ profile, onView, onEdit, onDelete }) {
           onClick={() => onEdit(profile)}
           style={{
             flex: 1,
-            padding: "8px",
+            padding: "8px 12px",
             borderRadius: "8px",
             border: "1px solid var(--color-border)",
             background: "transparent",
             color: "var(--color-text-muted)",
             fontSize: "13px",
+            fontWeight: 500,
             cursor: "pointer",
             transition: "all 0.15s",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "6px",
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.borderColor = "#6366f1";
@@ -128,20 +146,27 @@ export default function ProfileCard({ profile, onView, onEdit, onDelete }) {
             e.currentTarget.style.borderColor = "var(--color-border)";
             e.currentTarget.style.color = "var(--color-text-muted)";
           }}>
-          ✏️ Edit
+          <Pencil size={14} strokeWidth={2} />
+          Edit
         </button>
+
         <button
           onClick={() => onDelete(profile)}
           style={{
             flex: 1,
-            padding: "8px",
+            padding: "8px 12px",
             borderRadius: "8px",
             border: "1px solid var(--color-border)",
             background: "transparent",
             color: "var(--color-text-muted)",
             fontSize: "13px",
+            fontWeight: 500,
             cursor: "pointer",
             transition: "all 0.15s",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "6px",
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.borderColor = "#ef4444";
@@ -151,7 +176,8 @@ export default function ProfileCard({ profile, onView, onEdit, onDelete }) {
             e.currentTarget.style.borderColor = "var(--color-border)";
             e.currentTarget.style.color = "var(--color-text-muted)";
           }}>
-          🗑️ Delete
+          <Trash2 size={14} strokeWidth={2} />
+          Delete
         </button>
       </div>
     </div>
