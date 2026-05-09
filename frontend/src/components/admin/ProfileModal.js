@@ -1,5 +1,15 @@
 "use client";
-import { Mail, Phone, Link, MapPin, Calendar, Building2 } from "lucide-react";
+import {
+  Mail,
+  Phone,
+  Link,
+  MapPin,
+  Calendar,
+  Building2,
+  Download,
+  ExternalLink,
+  Image as ImageIcon,
+} from "lucide-react";
 
 export default function ProfileModal({ profile, onClose }) {
   if (!profile) return null;
@@ -8,7 +18,19 @@ export default function ProfileModal({ profile, onClose }) {
     profile.Name ||
     `${profile.FirstName || ""} ${profile.LastName || ""}`.trim();
 
-  // ✅ Format date from YYYY-MM-DD to "MMM YYYY"
+  //   Generate initials (same logic as ProfileCard)
+  const initials = fullName
+    .split(" ")
+    .filter((n) => n)
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
+  //   Safe access to profile picture URL
+  const profilePicUrl = profile.ProfilePicture?.url;
+
+  //   Format date from YYYY-MM-DD to "MMM YYYY"
   const formatDate = (dateStr) => {
     if (!dateStr) return "Present";
     const date = new Date(dateStr);
@@ -18,11 +40,41 @@ export default function ProfileModal({ profile, onClose }) {
     });
   };
 
-  // ✅ Format date range
+  //   Format date range
   const formatDateRange = (start, end) => {
     const startFormatted = formatDate(start);
     const endFormatted = end ? formatDate(end) : "Present";
     return `${startFormatted} - ${endFormatted}`;
+  };
+
+  //   RESUME DOWNLOAD HANDLER - Defined inside component
+  const handleResumeDownload = async (resumeUrl, fileName) => {
+    try {
+      // Ensure filename ends with .pdf
+      const finalFileName = fileName?.endsWith(".pdf")
+        ? fileName
+        : `${fileName || "resume"}.pdf`;
+
+      const response = await fetch(resumeUrl);
+      if (!response.ok) throw new Error("Failed to fetch resume");
+
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = finalFileName; // Forces exact filename + .pdf extension
+      document.body.appendChild(link);
+      link.click();
+
+      // Cleanup
+      link.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error("Download failed, opening in new tab:", error);
+      // Fallback: open PDF directly in browser
+      window.open(resumeUrl, "_blank", "noopener,noreferrer");
+    }
   };
 
   const Section = ({ title, children }) => (
@@ -133,6 +185,7 @@ export default function ProfileModal({ profile, onClose }) {
             gap: "20px",
             alignItems: "center",
           }}>
+          {/*   Avatar with Profile Picture Logic */}
           <div
             style={{
               width: "72px",
@@ -146,25 +199,42 @@ export default function ProfileModal({ profile, onClose }) {
               fontWeight: 700,
               color: "#fff",
               flexShrink: 0,
+              overflow: "hidden",
             }}>
-            {fullName
-              .split(" ")
-              .map((n) => n[0])
-              .join("")
-              .toUpperCase()
-              .slice(0, 2)}
+            {profilePicUrl ? (
+              <img
+                src={profilePicUrl}
+                alt={fullName}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                  display: "block",
+                }}
+                onError={(e) => {
+                  // Fallback to initials if image fails to load
+                  e.currentTarget.style.display = "none";
+                  e.currentTarget.parentElement.innerHTML = `<span style="line-height:1">${initials}</span>`;
+                }}
+              />
+            ) : (
+              <span style={{ lineHeight: 1 }}>{initials}</span>
+            )}
           </div>
-          <div>
+
+          <div style={{ flex: 1, minWidth: 0 }}>
             <div
               style={{
                 fontSize: "22px",
                 fontWeight: 700,
                 color: "var(--color-text)",
+                marginBottom: "4px",
               }}>
               {fullName}
             </div>
 
-            {/* ✅ Display JobRoles as chips or primary role */}
+            {/* Job Roles as chips */}
             {profile.JobRoles?.length > 0 && (
               <div
                 style={{
@@ -205,8 +275,22 @@ export default function ProfileModal({ profile, onClose }) {
                 fontSize: "13px",
                 marginTop: "4px",
               }}>
-              {profile.YearsOfExperience} years experience
+              {profile.YearsOfExperience
+                ? `${profile.YearsOfExperience} years experience`
+                : ""}
             </div>
+
+            {/*   Profile Slug */}
+            {profile.profileSlug && (
+              <div
+                style={{
+                  color: "var(--color-text-muted)",
+                  fontSize: "11px",
+                  marginTop: "2px",
+                }}>
+                @{profile.profileSlug}
+              </div>
+            )}
           </div>
         </div>
 
@@ -215,9 +299,9 @@ export default function ProfileModal({ profile, onClose }) {
           style={{
             overflowY: "auto",
             flex: 1,
-            padding: "24px 40px 32px 32px",
+            padding: "24px 32px 32px 32px",
           }}>
-          {/* ✅ Bio Section */}
+          {/*   Bio Section */}
           {profile.Bio && (
             <Section title="Bio">
               <p
@@ -232,7 +316,7 @@ export default function ProfileModal({ profile, onClose }) {
             </Section>
           )}
 
-          {/* ✅ Skills Section */}
+          {/*   Skills Section */}
           {profile.Skills?.length > 0 && (
             <Section title="Skills">
               <div
@@ -283,7 +367,7 @@ export default function ProfileModal({ profile, onClose }) {
             </Section>
           )}
 
-          {/* ✅ Industry Tools Section */}
+          {/*   Industry Tools Section */}
           {profile.IndustryTools?.length > 0 && (
             <Section title="Tools">
               <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
@@ -294,7 +378,7 @@ export default function ProfileModal({ profile, onClose }) {
             </Section>
           )}
 
-          {/* ✅ Education Section */}
+          {/*   Education Section */}
           {profile.Education?.length > 0 && (
             <Section title="Education">
               {profile.Education.map((e, i) => (
@@ -327,7 +411,7 @@ export default function ProfileModal({ profile, onClose }) {
             </Section>
           )}
 
-          {/* ✅ Work Experience Section - NEW */}
+          {/*   Work Experience Section */}
           {profile.WorkExperience?.length > 0 && (
             <Section title="Work Experience">
               {profile.WorkExperience.map((exp, i) => (
@@ -340,7 +424,6 @@ export default function ProfileModal({ profile, onClose }) {
                     marginBottom: "12px",
                     border: "1px solid var(--color-border)",
                   }}>
-                  {/* Header */}
                   <div style={{ marginBottom: "10px" }}>
                     <div
                       style={{
@@ -364,8 +447,6 @@ export default function ProfileModal({ profile, onClose }) {
                       {exp.CompanyName}
                     </div>
                   </div>
-
-                  {/* Date & Location */}
                   <div
                     style={{
                       display: "flex",
@@ -396,8 +477,6 @@ export default function ProfileModal({ profile, onClose }) {
                       </div>
                     )}
                   </div>
-
-                  {/* Description */}
                   {exp.Description && (
                     <p
                       style={{
@@ -410,8 +489,6 @@ export default function ProfileModal({ profile, onClose }) {
                       {exp.Description}
                     </p>
                   )}
-
-                  {/* Key Skills */}
                   {exp.KeySkills?.length > 0 && (
                     <div
                       style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
@@ -436,7 +513,180 @@ export default function ProfileModal({ profile, onClose }) {
             </Section>
           )}
 
-          {/* ✅ Address Section - NEW */}
+          {/*   Projects Section - NEW */}
+          {profile.Projects?.length > 0 && (
+            <Section title="Projects">
+              {profile.Projects.map((project, i) => (
+                <div
+                  key={i}
+                  style={{
+                    padding: "16px",
+                    background: "var(--color-bg)",
+                    borderRadius: "12px",
+                    marginBottom: "12px",
+                    border: "1px solid var(--color-border)",
+                  }}>
+                  <div
+                    style={{
+                      fontWeight: 600,
+                      fontSize: "15px",
+                      color: "var(--color-text)",
+                      marginBottom: "8px",
+                    }}>
+                    {project.Name}
+                  </div>
+                  {project.Description && (
+                    <p
+                      style={{
+                        color: "var(--color-text-muted)",
+                        fontSize: "13px",
+                        lineHeight: "1.6",
+                        marginBottom: "12px",
+                        whiteSpace: "pre-line",
+                      }}>
+                      {project.Description}
+                    </p>
+                  )}
+
+                  {/* Project Links */}
+                  {project.Links?.length > 0 && (
+                    <div
+                      style={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: "8px",
+                        marginBottom: "12px",
+                      }}>
+                      {project.Links.map((link, j) => (
+                        <a
+                          key={j}
+                          href={link.url || link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "4px",
+                            padding: "4px 10px",
+                            borderRadius: "8px",
+                            background: "rgba(99, 102, 241, 0.1)",
+                            color: "#6366f1",
+                            fontSize: "11px",
+                            fontWeight: 500,
+                            textDecoration: "none",
+                          }}>
+                          <ExternalLink size={12} />
+                          {link.label || "View Project"}
+                        </a>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Project Media */}
+                  {project.Media?.length > 0 && (
+                    <div
+                      style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                      {project.Media.slice(0, 3).map((media, j) => (
+                        <a
+                          key={j}
+                          href={media.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            width: "60px",
+                            height: "60px",
+                            borderRadius: "8px",
+                            overflow: "hidden",
+                            border: "1px solid var(--color-border)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            background: "var(--color-bg)",
+                          }}>
+                          {media.resourceType === "image" ? (
+                            <img
+                              src={media.url}
+                              alt={project.Name}
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "cover",
+                              }}
+                            />
+                          ) : (
+                            <ImageIcon
+                              size={20}
+                              style={{ color: "var(--color-text-muted)" }}
+                            />
+                          )}
+                        </a>
+                      ))}
+                      {project.Media.length > 3 && (
+                        <div
+                          style={{
+                            width: "60px",
+                            height: "60px",
+                            borderRadius: "8px",
+                            border: "1px solid var(--color-border)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: "11px",
+                            color: "var(--color-text-muted)",
+                            background: "var(--color-bg)",
+                          }}>
+                          +{project.Media.length - 3}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </Section>
+          )}
+
+          {/*   Resume Section */}
+          {profile.Resume?.url && (
+            <Section title="Resume">
+              <button
+                type="button"
+                onClick={() =>
+                  handleResumeDownload(
+                    profile.Resume.url,
+                    profile.Resume.fileName,
+                  )
+                }
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  padding: "12px 16px",
+                  background: "var(--color-bg)",
+                  border: "1px solid var(--color-border)",
+                  borderRadius: "10px",
+                  color: "var(--color-text)",
+                  fontSize: "13px",
+                  fontWeight: 500,
+                  cursor: "pointer",
+                  transition: "all 0.2s",
+                  width: "100%",
+                  textAlign: "left",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = "#6366f1";
+                  e.currentTarget.style.color = "#6366f1";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "var(--color-border)";
+                  e.currentTarget.style.color = "var(--color-text)";
+                }}>
+                <Download size={16} />
+                <span>{profile.Resume.fileName || "Download Resume"}</span>
+              </button>
+            </Section>
+          )}
+
+          {/*   Address Section */}
           {(profile.Address?.Street ||
             profile.Address?.City ||
             profile.Address?.State ||
@@ -456,6 +706,7 @@ export default function ProfileModal({ profile, onClose }) {
                     <div>{profile.Address.Street}</div>
                   )}
                   {[
+                    profile.Address.City,
                     profile.Address.State,
                     profile.Address.Pin,
                     profile.Address.Country,
@@ -464,6 +715,7 @@ export default function ProfileModal({ profile, onClose }) {
                     .join(", ") && (
                     <div>
                       {[
+                        profile.Address.City,
                         profile.Address.State,
                         profile.Address.Pin,
                         profile.Address.Country,
@@ -477,7 +729,7 @@ export default function ProfileModal({ profile, onClose }) {
             </Section>
           )}
 
-          {/* ✅ Contact Section */}
+          {/*   Contact Section */}
           {profile.ContactInfo && (
             <Section title="Contact">
               <div
@@ -508,7 +760,6 @@ export default function ProfileModal({ profile, onClose }) {
                     <span>{profile.ContactInfo.Email}</span>
                   </a>
                 )}
-
                 {profile.ContactInfo.PhoneNo && (
                   <div
                     style={{
@@ -522,7 +773,6 @@ export default function ProfileModal({ profile, onClose }) {
                     <span>{profile.ContactInfo.PhoneNo}</span>
                   </div>
                 )}
-
                 {profile.ContactInfo.LinkedIn && (
                   <a
                     href={
@@ -560,7 +810,7 @@ export default function ProfileModal({ profile, onClose }) {
             </Section>
           )}
 
-          {/* ✅ Hobbies Section */}
+          {/*   Hobbies Section */}
           {profile.Hobbies?.length > 0 && (
             <Section title="Hobbies">
               <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>

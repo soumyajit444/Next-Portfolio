@@ -1,13 +1,13 @@
 "use client";
 import React from "react";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import SecretKeyGate from "@/components/admin/SecretKeyGate";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import { createProfile } from "@/services/profileService";
 import DatePicker from "@/components/ui/DatePicker";
 
-// Dynamic styles using CSS variables
+// ─── Shared styles ────────────────────────────────────────────────────────────
 const inputStyle = {
   width: "100%",
   padding: "11px 14px",
@@ -20,7 +20,36 @@ const inputStyle = {
   boxSizing: "border-box",
 };
 
-// Chip Input Component - ✅ Using --color-border-muted for theme support
+const sectionHeadStyle = {
+  fontSize: "13px",
+  color: "#6366f1",
+  letterSpacing: "1.5px",
+  textTransform: "uppercase",
+  fontWeight: 600,
+  marginBottom: "16px",
+};
+
+const dividerStyle = {
+  height: "1px",
+  background: "var(--color-border)",
+  margin: "20px 0",
+};
+
+const addBtnStyle = {
+  background: "transparent",
+  border: "1px dashed var(--color-border)",
+  borderRadius: "8px",
+  color: "var(--color-text-muted)",
+  padding: "8px 16px",
+  cursor: "pointer",
+  fontSize: "13px",
+  marginTop: "8px",
+  display: "flex",
+  alignItems: "center",
+  gap: "6px",
+};
+
+// ─── ChipInput ────────────────────────────────────────────────────────────────
 const ChipInput = ({ items, onChange }) => {
   const [inputValue, setInputValue] = useState("");
 
@@ -35,9 +64,8 @@ const ChipInput = ({ items, onChange }) => {
     }
   };
 
-  const removeItem = (itemToRemove) => {
+  const removeItem = (itemToRemove) =>
     onChange(items.filter((item) => item !== itemToRemove));
-  };
 
   return (
     <div
@@ -100,6 +128,162 @@ const ChipInput = ({ items, onChange }) => {
   );
 };
 
+// ─── FileUploadField ──────────────────────────────────────────────────────────
+/**
+ * A single-file upload button that shows the selected filename.
+ * `accept`  – e.g. "image/*" or ".pdf"
+ * `value`   – current File | null
+ * `onChange`– called with File | null
+ */
+const FileUploadField = ({
+  accept,
+  value,
+  onChange,
+  placeholder = "Choose file…",
+}) => {
+  const inputRef = useRef(null);
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "10px",
+        padding: "10px 14px",
+        border: "1px solid var(--color-border)",
+        borderRadius: "10px",
+        background: "var(--color-bg)",
+        cursor: "pointer",
+      }}
+      onClick={() => inputRef.current?.click()}>
+      <input
+        ref={inputRef}
+        type="file"
+        accept={accept}
+        style={{ display: "none" }}
+        onChange={(e) => onChange(e.target.files?.[0] || null)}
+      />
+      <span
+        style={{
+          fontSize: "18px",
+          lineHeight: 1,
+          color: "#6366f1",
+          userSelect: "none",
+        }}>
+        📎
+      </span>
+      <span
+        style={{
+          fontSize: "14px",
+          color: value ? "var(--color-text)" : "var(--color-text-muted)",
+          flex: 1,
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+        }}>
+        {value ? value.name : placeholder}
+      </span>
+      {value && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onChange(null);
+            if (inputRef.current) inputRef.current.value = "";
+          }}
+          style={{
+            background: "transparent",
+            border: "none",
+            color: "#ef4444",
+            cursor: "pointer",
+            fontSize: "16px",
+            lineHeight: 1,
+            padding: 0,
+          }}>
+          ×
+        </button>
+      )}
+    </div>
+  );
+};
+
+// ─── MultiFileUploadField ─────────────────────────────────────────────────────
+/**
+ * Multi-file picker (used for project media).
+ */
+const MultiFileUploadField = ({ accept, files, onChange }) => {
+  const inputRef = useRef(null);
+
+  const removeFile = (index) => onChange(files.filter((_, i) => i !== index));
+
+  return (
+    <div>
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "8px",
+          marginBottom: "8px",
+        }}>
+        {files.map((file, i) => (
+          <span
+            key={i}
+            style={{
+              background: "var(--color-border-muted)",
+              color: "var(--color-text)",
+              padding: "4px 10px",
+              borderRadius: "16px",
+              fontSize: "12px",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              maxWidth: "200px",
+            }}>
+            <span
+              style={{
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}>
+              {file.name}
+            </span>
+            <button
+              onClick={() => removeFile(i)}
+              style={{
+                background: "transparent",
+                border: "none",
+                color: "#ef4444",
+                cursor: "pointer",
+                fontSize: "14px",
+                lineHeight: 1,
+                padding: 0,
+                flexShrink: 0,
+              }}>
+              ×
+            </button>
+          </span>
+        ))}
+      </div>
+      <button onClick={() => inputRef.current?.click()} style={addBtnStyle}>
+        <span style={{ fontSize: "16px", lineHeight: 1 }}>+</span>
+        Add Media
+      </button>
+      <input
+        ref={inputRef}
+        type="file"
+        accept={accept}
+        multiple
+        style={{ display: "none" }}
+        onChange={(e) => {
+          const newFiles = Array.from(e.target.files || []);
+          onChange([...files, ...newFiles]);
+          e.target.value = "";
+        }}
+      />
+    </div>
+  );
+};
+
+// ─── Small helpers ────────────────────────────────────────────────────────────
 const Label = ({ children }) => (
   <div
     style={{
@@ -122,6 +306,31 @@ const Field = ({ label, children }) => (
   </div>
 );
 
+const SectionHead = ({ children }) => (
+  <div style={sectionHeadStyle}>{children}</div>
+);
+
+const Divider = () => <div style={dividerStyle} />;
+
+// ─── Default empty shapes ─────────────────────────────────────────────────────
+const emptyExperience = () => ({
+  CompanyName: "",
+  Role: "",
+  StartDate: "",
+  EndDate: "",
+  Description: "",
+  WorkLocation: "",
+  KeySkills: [],
+});
+
+const emptyProject = () => ({
+  Name: "",
+  Description: "",
+  Links: [],
+  media: [], // File[]
+});
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 export default function CreateProfilePage() {
   const router = useRouter();
   const [secret, setSecret] = useState(null);
@@ -129,40 +338,28 @@ export default function CreateProfilePage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
+  // File uploads (top-level)
+  const [profilePicture, setProfilePicture] = useState(null);
+  const [resume, setResume] = useState(null);
+
   const [form, setForm] = useState({
     profileSlug: "",
     FirstName: "",
     LastName: "",
-
-    // Job Roles (array of strings)
     JobRoles: [],
-
     Bio: "",
     YearsOfExperience: "",
-
     Skills: [{ Name: "", Rating: "" }],
     IndustryTools: [],
-
     Education: [{ Degree: "", Institution: "", PassOutYear: "" }],
-
-    // Work Experience (dynamic array)
-    WorkExperience: [
-      {
-        CompanyName: "",
-        Role: "",
-        StartDate: "",
-        EndDate: "",
-        Description: "",
-        WorkLocation: "",
-        KeySkills: [],
-      },
-    ],
-
+    WorkExperience: [emptyExperience()],
+    Projects: [emptyProject()],
     Hobbies: [],
     Address: { Street: "", State: "", Pin: "", Country: "" },
     ContactInfo: { PhoneNo: "", Email: "", LinkedIn: "" },
   });
 
+  // ── Generic setter (dot-path) ─────────────────────────────────────
   const set = (path, value) => {
     const keys = path.split(".");
     setForm((prev) => {
@@ -177,6 +374,7 @@ export default function CreateProfilePage() {
     });
   };
 
+  // ── Array helpers (for Skills / Education) ────────────────────────
   const setArrItem = (arr, idx, key, value) => {
     const newArr = [...form[arr]];
     newArr[idx] = { ...newArr[idx], [key]: value };
@@ -189,31 +387,18 @@ export default function CreateProfilePage() {
   const removeItem = (arr, idx) =>
     setForm({ ...form, [arr]: form[arr].filter((_, i) => i !== idx) });
 
-  // ✅ Helpers for Work Experience
-  const addExperience = () => {
+  // ── Work Experience helpers ───────────────────────────────────────
+  const addExperience = () =>
     setForm({
       ...form,
-      WorkExperience: [
-        ...form.WorkExperience,
-        {
-          CompanyName: "",
-          Role: "",
-          StartDate: "",
-          EndDate: "",
-          Description: "",
-          WorkLocation: "",
-          KeySkills: [],
-        },
-      ],
+      WorkExperience: [...form.WorkExperience, emptyExperience()],
     });
-  };
 
-  const removeExperience = (index) => {
+  const removeExperience = (index) =>
     setForm({
       ...form,
       WorkExperience: form.WorkExperience.filter((_, i) => i !== index),
     });
-  };
 
   const updateExperience = (index, field, value) => {
     const newExp = [...form.WorkExperience];
@@ -221,6 +406,20 @@ export default function CreateProfilePage() {
     setForm({ ...form, WorkExperience: newExp });
   };
 
+  // ── Project helpers ───────────────────────────────────────────────
+  const addProject = () =>
+    setForm({ ...form, Projects: [...form.Projects, emptyProject()] });
+
+  const removeProject = (index) =>
+    setForm({ ...form, Projects: form.Projects.filter((_, i) => i !== index) });
+
+  const updateProject = (index, field, value) => {
+    const newProj = [...form.Projects];
+    newProj[index] = { ...newProj[index], [field]: value };
+    setForm({ ...form, Projects: newProj });
+  };
+
+  // ── Submit ────────────────────────────────────────────────────────
   const handleSubmit = async () => {
     setLoading(true);
     setError("");
@@ -228,22 +427,14 @@ export default function CreateProfilePage() {
       const payload = {
         ...form,
         YearsOfExperience: Number(form.YearsOfExperience),
-
-        // Filter & format Skills
         Skills: form.Skills.filter((s) => s.Name).map((s) => ({
           ...s,
           Rating: Number(s.Rating),
         })),
-
-        // Filter arrays
         IndustryTools: form.IndustryTools.filter(Boolean),
         Hobbies: form.Hobbies.filter(Boolean),
         JobRoles: form.JobRoles.filter(Boolean),
-
-        // Filter & clean Education
         Education: form.Education.filter((e) => e.Degree),
-
-        // ✅ Filter & clean WorkExperience
         WorkExperience: form.WorkExperience.filter(
           (exp) => exp.CompanyName || exp.Role,
         ).map((exp) => ({
@@ -254,8 +445,14 @@ export default function CreateProfilePage() {
             ? exp.KeySkills.filter(Boolean)
             : [],
         })),
-
-        Projects: [],
+        Projects: form.Projects.filter((p) => p.Name).map((p) => ({
+          ...p,
+          Links: (p.Links || []).filter(Boolean),
+          // `media` is a File[] — profileService reads it
+        })),
+        // Top-level file uploads
+        profilePicture,
+        resume,
       };
 
       await createProfile(payload, secret);
@@ -268,6 +465,7 @@ export default function CreateProfilePage() {
     }
   };
 
+  // ── Guards ────────────────────────────────────────────────────────
   if (!secret) return <SecretKeyGate onUnlock={setSecret} />;
 
   if (success) {
@@ -288,13 +486,14 @@ export default function CreateProfilePage() {
             Profile Created!
           </div>
           <div style={{ color: "var(--color-text-muted)", marginTop: "8px" }}>
-            Redirecting to panel...
+            Redirecting to panel…
           </div>
         </div>
       </div>
     );
   }
 
+  // ── Render ────────────────────────────────────────────────────────
   return (
     <div
       style={{
@@ -315,6 +514,7 @@ export default function CreateProfilePage() {
       </div>
 
       <div style={{ maxWidth: "680px", margin: "0 auto" }}>
+        {/* Page title */}
         <div style={{ marginBottom: "40px", paddingTop: "40px" }}>
           <div
             style={{
@@ -345,18 +545,8 @@ export default function CreateProfilePage() {
             padding: "32px",
             boxShadow: "var(--card-shadow)",
           }}>
-          {/* Basic Info */}
-          <div
-            style={{
-              fontSize: "13px",
-              color: "#6366f1",
-              letterSpacing: "1.5px",
-              textTransform: "uppercase",
-              fontWeight: 600,
-              marginBottom: "20px",
-            }}>
-            Basic Info
-          </div>
+          {/* ── Basic Info ──────────────────────────────────────────── */}
+          <SectionHead>Basic Info</SectionHead>
           <div
             style={{
               display: "grid",
@@ -406,62 +596,49 @@ export default function CreateProfilePage() {
             />
           </Field>
 
-          <div
-            style={{
-              height: "1px",
-              background: "var(--color-border)",
-              margin: "28px 0",
-            }}
-          />
+          <Divider />
 
-          {/* ✅ Job Roles (Chips) */}
-          <div style={{ marginBottom: "20px" }}>
-            <div
-              style={{
-                fontSize: "13px",
-                color: "#6366f1",
-                letterSpacing: "1.5px",
-                textTransform: "uppercase",
-                fontWeight: 600,
-                marginBottom: "16px",
-              }}>
-              Job Roles
-            </div>
-            <ChipInput
-              items={form.JobRoles}
-              onChange={(newItems) => setForm({ ...form, JobRoles: newItems })}
+          {/* ── Profile Picture & Resume ─────────────────────────────── */}
+          <SectionHead>Uploads</SectionHead>
+          <Field label="Profile Picture">
+            <FileUploadField
+              accept="image/*"
+              value={profilePicture}
+              onChange={setProfilePicture}
+              placeholder="Upload profile picture (JPG, PNG, WEBP…)"
             />
-            <div
-              style={{
-                fontSize: "11px",
-                color: "var(--color-text-muted)",
-                marginTop: "6px",
-              }}>
-              Add roles like: Frontend Developer, UI Developer, React JS
-              Developer
-            </div>
-          </div>
+          </Field>
+          <Field label="Resume">
+            <FileUploadField
+              accept=".pdf,.doc,.docx"
+              value={resume}
+              onChange={setResume}
+              placeholder="Upload résumé (PDF, DOC…)"
+            />
+          </Field>
 
-          <div
-            style={{
-              height: "1px",
-              background: "var(--color-border)",
-              margin: "20px 0",
-            }}
+          <Divider />
+
+          {/* ── Job Roles ────────────────────────────────────────────── */}
+          <SectionHead>Job Roles</SectionHead>
+          <ChipInput
+            items={form.JobRoles}
+            onChange={(newItems) => setForm({ ...form, JobRoles: newItems })}
           />
-
-          {/* Skills */}
           <div
             style={{
-              fontSize: "13px",
-              color: "#6366f1",
-              letterSpacing: "1.5px",
-              textTransform: "uppercase",
-              fontWeight: 600,
-              marginBottom: "16px",
+              fontSize: "11px",
+              color: "var(--color-text-muted)",
+              marginTop: "6px",
+              marginBottom: "4px",
             }}>
-            Skills
+            Add roles like: Frontend Developer, UI Developer, React JS Developer
           </div>
+
+          <Divider />
+
+          {/* ── Skills ──────────────────────────────────────────────── */}
+          <SectionHead>Skills</SectionHead>
           {form.Skills.map((s, i) => (
             <div
               key={i}
@@ -508,39 +685,14 @@ export default function CreateProfilePage() {
           ))}
           <button
             onClick={() => addItem("Skills", { Name: "", Rating: "" })}
-            style={{
-              background: "transparent",
-              border: "1px dashed var(--color-border)",
-              borderRadius: "8px",
-              color: "var(--color-text-muted)",
-              padding: "8px 16px",
-              cursor: "pointer",
-              fontSize: "13px",
-              marginTop: "8px",
-            }}>
-            + Add Skill
+            style={addBtnStyle}>
+            <span style={{ fontSize: "16px", lineHeight: 1 }}>+</span> Add Skill
           </button>
 
-          <div
-            style={{
-              height: "1px",
-              background: "var(--color-border)",
-              margin: "20px 0",
-            }}
-          />
+          <Divider />
 
-          {/* Industry Tools (Chips) */}
-          <div
-            style={{
-              fontSize: "13px",
-              color: "#6366f1",
-              letterSpacing: "1.5px",
-              textTransform: "uppercase",
-              fontWeight: 600,
-              marginBottom: "16px",
-            }}>
-            Industry Tools
-          </div>
+          {/* ── Industry Tools ───────────────────────────────────────── */}
+          <SectionHead>Industry Tools</SectionHead>
           <ChipInput
             items={form.IndustryTools}
             onChange={(newItems) =>
@@ -548,26 +700,10 @@ export default function CreateProfilePage() {
             }
           />
 
-          <div
-            style={{
-              height: "1px",
-              background: "var(--color-border)",
-              margin: "20px 0",
-            }}
-          />
+          <Divider />
 
-          {/* Education */}
-          <div
-            style={{
-              fontSize: "13px",
-              color: "#6366f1",
-              letterSpacing: "1.5px",
-              textTransform: "uppercase",
-              fontWeight: 600,
-              marginBottom: "16px",
-            }}>
-            Education
-          </div>
+          {/* ── Education ────────────────────────────────────────────── */}
+          <SectionHead>Education</SectionHead>
           {form.Education.map((e, i) => (
             <div
               key={i}
@@ -636,259 +772,276 @@ export default function CreateProfilePage() {
                 PassOutYear: "",
               })
             }
-            style={{
-              background: "transparent",
-              border: "1px dashed var(--color-border)",
-              borderRadius: "8px",
-              color: "var(--color-text-muted)",
-              padding: "8px 16px",
-              cursor: "pointer",
-              fontSize: "13px",
-              marginTop: "8px",
-            }}>
-            + Add Education
+            style={addBtnStyle}>
+            <span style={{ fontSize: "16px", lineHeight: 1 }}>+</span> Add
+            Education
           </button>
 
-          <div
-            style={{
-              height: "1px",
-              background: "var(--color-border)",
-              margin: "20px 0",
-            }}
-          />
+          <Divider />
 
-          {/* ✅ Work Experience Section */}
-          <div style={{ marginBottom: "20px" }}>
+          {/* ── Work Experience ──────────────────────────────────────── */}
+          <SectionHead>Work Experience</SectionHead>
+          {form.WorkExperience.map((exp, i) => (
             <div
+              key={i}
               style={{
-                fontSize: "13px",
-                color: "#6366f1",
-                letterSpacing: "1.5px",
-                textTransform: "uppercase",
-                fontWeight: 600,
-                marginBottom: "16px",
+                background: "var(--color-bg)",
+                border: "1px solid var(--color-border)",
+                borderRadius: "12px",
+                padding: "16px",
+                marginBottom: "12px",
               }}>
-              Work Experience
-            </div>
-
-            {form.WorkExperience.map((exp, i) => (
               <div
-                key={i}
                 style={{
-                  background: "var(--color-bg)",
-                  border: "1px solid var(--color-border)",
-                  borderRadius: "12px",
-                  padding: "16px",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
                   marginBottom: "12px",
                 }}>
-                {/* Header with Remove */}
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginBottom: "12px",
-                  }}>
-                  <strong style={{ color: "var(--color-text)" }}>
-                    Experience #{i + 1}
-                  </strong>
-                  {form.WorkExperience.length > 1 && (
-                    <button
-                      onClick={() => removeExperience(i)}
-                      style={{
-                        background: "transparent",
-                        border: "none",
-                        color: "#ef4444",
-                        cursor: "pointer",
-                        fontSize: "13px",
-                        fontWeight: 500,
-                      }}>
-                      Remove
-                    </button>
-                  )}
-                </div>
+                <strong style={{ color: "var(--color-text)" }}>
+                  Experience #{i + 1}
+                </strong>
+                {form.WorkExperience.length > 1 && (
+                  <button
+                    onClick={() => removeExperience(i)}
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      color: "#ef4444",
+                      cursor: "pointer",
+                      fontSize: "13px",
+                      fontWeight: 500,
+                    }}>
+                    Remove
+                  </button>
+                )}
+              </div>
 
-                {/* Company & Role */}
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: "0 14px",
-                  }}>
-                  <Field label="Company Name">
-                    <input
-                      style={inputStyle}
-                      value={exp.CompanyName}
-                      onChange={(e) =>
-                        updateExperience(i, "CompanyName", e.target.value)
-                      }
-                      placeholder="e.g. Google, Microsoft"
-                    />
-                  </Field>
-                  <Field label="Job Role">
-                    <input
-                      style={inputStyle}
-                      value={exp.Role}
-                      onChange={(e) =>
-                        updateExperience(i, "Role", e.target.value)
-                      }
-                      placeholder="e.g. Frontend Developer"
-                    />
-                  </Field>
-                </div>
-
-                {/* 📅 Start & End Date - Native Date Input */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  {/* Start Date */}
-                  <Field label="Start Date">
-                    <DatePicker
-                      id={`start-date-${i}`}
-                      value={exp.StartDate || ""}
-                      onChange={(date) =>
-                        updateExperience(i, "StartDate", date)
-                      }
-                      max={exp.EndDate || undefined}
-                      placeholder="Select start date"
-                    />
-                  </Field>
-
-                  {/* End Date */}
-                  <Field label="End Date">
-                    <DatePicker
-                      id={`end-date-${i}`}
-                      value={exp.EndDate || ""}
-                      onChange={(date) => updateExperience(i, "EndDate", date)}
-                      min={exp.StartDate || undefined}
-                      placeholder="Present"
-                    />
-                  </Field>
-                </div>
-
-                {/* ✅ Currently Working Here Checkbox */}
-                <div className="mb-4">
-                  <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={!exp.EndDate}
-                      onChange={(e) => {
-                        updateExperience(
-                          i,
-                          "EndDate",
-                          e.target.checked ? "" : exp.EndDate,
-                        );
-                      }}
-                      className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-gray-800"
-                    />
-                    I currently work here
-                  </label>
-                </div>
-
-                {/* Work Location */}
-                <Field label="Work Location">
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "0 14px",
+                }}>
+                <Field label="Company Name">
                   <input
                     style={inputStyle}
-                    value={exp.WorkLocation}
+                    value={exp.CompanyName}
                     onChange={(e) =>
-                      updateExperience(i, "WorkLocation", e.target.value)
+                      updateExperience(i, "CompanyName", e.target.value)
                     }
-                    placeholder="e.g. Remote, Kolkata, India"
+                    placeholder="e.g. Google, Microsoft"
                   />
                 </Field>
-
-                {/* Description */}
-                <Field label="Description">
-                  <textarea
-                    style={{
-                      ...inputStyle,
-                      minHeight: "70px",
-                      resize: "vertical",
-                    }}
-                    value={exp.Description}
+                <Field label="Job Role">
+                  <input
+                    style={inputStyle}
+                    value={exp.Role}
                     onChange={(e) =>
-                      updateExperience(i, "Description", e.target.value)
+                      updateExperience(i, "Role", e.target.value)
                     }
-                    placeholder="Brief description of your role and responsibilities..."
-                  />
-                </Field>
-
-                {/* ✅ Key Skills as Chip Input (matching EditProfileModal) */}
-                <Field label="Key Skills">
-                  <ChipInput
-                    items={exp.KeySkills || []}
-                    onChange={(newSkills) =>
-                      updateExperience(i, "KeySkills", newSkills)
-                    }
+                    placeholder="e.g. Frontend Developer"
                   />
                 </Field>
               </div>
-            ))}
 
-            {/* Add Experience Button */}
-            <button
-              onClick={addExperience}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <Field label="Start Date">
+                  <DatePicker
+                    id={`start-date-${i}`}
+                    value={exp.StartDate || ""}
+                    onChange={(date) => updateExperience(i, "StartDate", date)}
+                    max={exp.EndDate || undefined}
+                    placeholder="Select start date"
+                  />
+                </Field>
+                <Field label="End Date">
+                  <DatePicker
+                    id={`end-date-${i}`}
+                    value={exp.EndDate || ""}
+                    onChange={(date) => updateExperience(i, "EndDate", date)}
+                    min={exp.StartDate || undefined}
+                    placeholder="Present"
+                  />
+                </Field>
+              </div>
+
+              <div className="mb-4">
+                <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={!exp.EndDate}
+                    onChange={(e) =>
+                      updateExperience(
+                        i,
+                        "EndDate",
+                        e.target.checked ? "" : exp.EndDate,
+                      )
+                    }
+                    className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-gray-800"
+                  />
+                  I currently work here
+                </label>
+              </div>
+
+              <Field label="Work Location">
+                <input
+                  style={inputStyle}
+                  value={exp.WorkLocation}
+                  onChange={(e) =>
+                    updateExperience(i, "WorkLocation", e.target.value)
+                  }
+                  placeholder="e.g. Remote, Kolkata, India"
+                />
+              </Field>
+
+              <Field label="Description">
+                <textarea
+                  style={{
+                    ...inputStyle,
+                    minHeight: "70px",
+                    resize: "vertical",
+                  }}
+                  value={exp.Description}
+                  onChange={(e) =>
+                    updateExperience(i, "Description", e.target.value)
+                  }
+                  placeholder="Brief description of your role and responsibilities…"
+                />
+              </Field>
+
+              <Field label="Key Skills">
+                <ChipInput
+                  items={exp.KeySkills || []}
+                  onChange={(newSkills) =>
+                    updateExperience(i, "KeySkills", newSkills)
+                  }
+                />
+              </Field>
+            </div>
+          ))}
+          <button onClick={addExperience} style={addBtnStyle}>
+            <span style={{ fontSize: "16px", lineHeight: 1 }}>+</span> Add Work
+            Experience
+          </button>
+
+          <Divider />
+
+          {/* ── Projects ──────────────────────────────────────────────── */}
+          <SectionHead>Projects</SectionHead>
+          {form.Projects.map((proj, i) => (
+            <div
+              key={i}
               style={{
-                background: "transparent",
-                border: "1px dashed var(--color-border)",
-                borderRadius: "8px",
-                color: "var(--color-text-muted)",
-                padding: "8px 16px",
-                cursor: "pointer",
-                fontSize: "13px",
-                marginTop: "8px",
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
+                background: "var(--color-bg)",
+                border: "1px solid var(--color-border)",
+                borderRadius: "12px",
+                padding: "16px",
+                marginBottom: "12px",
               }}>
-              <span style={{ fontSize: "16px", lineHeight: 1 }}>+</span>
-              Add Work Experience
-            </button>
-          </div>
+              {/* Header */}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: "12px",
+                }}>
+                <strong style={{ color: "var(--color-text)" }}>
+                  Project #{i + 1}
+                </strong>
+                {form.Projects.length > 1 && (
+                  <button
+                    onClick={() => removeProject(i)}
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      color: "#ef4444",
+                      cursor: "pointer",
+                      fontSize: "13px",
+                      fontWeight: 500,
+                    }}>
+                    Remove
+                  </button>
+                )}
+              </div>
 
-          <div
-            style={{
-              height: "1px",
-              background: "var(--color-border)",
-              margin: "20px 0",
-            }}
-          />
+              <Field label="Project Name">
+                <input
+                  style={inputStyle}
+                  value={proj.Name}
+                  onChange={(e) => updateProject(i, "Name", e.target.value)}
+                  placeholder="e.g. Portfolio Website"
+                />
+              </Field>
 
-          {/* Hobbies (Chips) */}
-          <div
-            style={{
-              fontSize: "13px",
-              color: "#6366f1",
-              letterSpacing: "1.5px",
-              textTransform: "uppercase",
-              fontWeight: 600,
-              marginBottom: "16px",
-            }}>
-            Hobbies
-          </div>
+              <Field label="Description">
+                <textarea
+                  style={{
+                    ...inputStyle,
+                    minHeight: "70px",
+                    resize: "vertical",
+                  }}
+                  value={proj.Description}
+                  onChange={(e) =>
+                    updateProject(i, "Description", e.target.value)
+                  }
+                  placeholder="Brief description of the project…"
+                />
+              </Field>
+
+              {/* Links as chips */}
+              <Field label="Links (GitHub, Live URL, etc.)">
+                <ChipInput
+                  items={proj.Links || []}
+                  onChange={(newLinks) => updateProject(i, "Links", newLinks)}
+                />
+                <div
+                  style={{
+                    fontSize: "11px",
+                    color: "var(--color-text-muted)",
+                    marginTop: "6px",
+                  }}>
+                  Paste a URL and press Enter
+                </div>
+              </Field>
+
+              {/* Project media files */}
+              <Field label="Media (Images / Videos)">
+                <MultiFileUploadField
+                  accept="image/*,video/*"
+                  files={proj.media || []}
+                  onChange={(newFiles) => updateProject(i, "media", newFiles)}
+                />
+                <div
+                  style={{
+                    fontSize: "11px",
+                    color: "var(--color-text-muted)",
+                    marginTop: "6px",
+                  }}>
+                  Each file will be attached to this project in the API payload
+                </div>
+              </Field>
+            </div>
+          ))}
+          <button onClick={addProject} style={addBtnStyle}>
+            <span style={{ fontSize: "16px", lineHeight: 1 }}>+</span> Add
+            Project
+          </button>
+
+          <Divider />
+
+          {/* ── Hobbies ───────────────────────────────────────────────── */}
+          <SectionHead>Hobbies</SectionHead>
           <ChipInput
             items={form.Hobbies}
             onChange={(newItems) => setForm({ ...form, Hobbies: newItems })}
           />
 
-          <div
-            style={{
-              height: "1px",
-              background: "var(--color-border)",
-              margin: "20px 0",
-            }}
-          />
+          <Divider />
 
-          {/* Contact */}
-          <div
-            style={{
-              fontSize: "13px",
-              color: "#6366f1",
-              letterSpacing: "1.5px",
-              textTransform: "uppercase",
-              fontWeight: 600,
-              marginBottom: "16px",
-            }}>
-            Contact Info
-          </div>
+          {/* ── Contact ───────────────────────────────────────────────── */}
+          <SectionHead>Contact Info</SectionHead>
           <Field label="Email">
             <input
               style={inputStyle}
@@ -912,26 +1065,10 @@ export default function CreateProfilePage() {
             />
           </Field>
 
-          <div
-            style={{
-              height: "1px",
-              background: "var(--color-border)",
-              margin: "20px 0",
-            }}
-          />
+          <Divider />
 
-          {/* Address */}
-          <div
-            style={{
-              fontSize: "13px",
-              color: "#6366f1",
-              letterSpacing: "1.5px",
-              textTransform: "uppercase",
-              fontWeight: 600,
-              marginBottom: "16px",
-            }}>
-            Address
-          </div>
+          {/* ── Address ───────────────────────────────────────────────── */}
+          <SectionHead>Address</SectionHead>
           <Field label="Street">
             <input
               style={inputStyle}
@@ -968,6 +1105,7 @@ export default function CreateProfilePage() {
             />
           </Field>
 
+          {/* ── Error ─────────────────────────────────────────────────── */}
           {error && (
             <div
               style={{
@@ -983,6 +1121,7 @@ export default function CreateProfilePage() {
             </div>
           )}
 
+          {/* ── Actions ───────────────────────────────────────────────── */}
           <div style={{ display: "flex", gap: "12px", marginTop: "8px" }}>
             <button
               onClick={() => router.back()}
@@ -1015,7 +1154,7 @@ export default function CreateProfilePage() {
                 opacity: loading ? 0.7 : 1,
                 letterSpacing: "0.2px",
               }}>
-              {loading ? "Creating..." : "Create Profile"}
+              {loading ? "Creating…" : "Create Profile"}
             </button>
           </div>
         </div>
