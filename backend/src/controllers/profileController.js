@@ -148,7 +148,29 @@ exports.updateProfile = async (req, res) => {
 
     const updateData = { ...req.body };
 
-    // ── Profile picture ──────────────────────
+    // ── Parse JSON-string fields sent by the frontend ────────────────────────
+    // The frontend sends complex fields as JSON strings to avoid multer
+    // deep-parse issues with nested arrays.
+    const jsonFields = [
+      "JobRoles",
+      "IndustryTools",
+      "Hobbies",
+      "Skills",
+      "Education",
+      "WorkExperience",
+      "Projects",
+      "Address",
+      "ContactInfo",
+    ];
+    for (const field of jsonFields) {
+      if (typeof updateData[field] === "string") {
+        try {
+          updateData[field] = JSON.parse(updateData[field]);
+        } catch {}
+      }
+    }
+
+    // ── Profile picture ──────────────────────────────────────────────────────
     if (req.files?.profilePicture?.[0]) {
       // Delete old picture from Cloudinary
       if (existing.ProfilePicture?.publicId) {
@@ -160,7 +182,7 @@ exports.updateProfile = async (req, res) => {
       );
     }
 
-    // ── Resume ───────────────────────────────
+    // ── Resume ───────────────────────────────────────────────────────────────
     if (req.files?.resume?.[0]) {
       if (existing.Resume?.publicId) {
         await deleteFromCloudinary(existing.Resume.publicId, "raw");
@@ -173,17 +195,13 @@ exports.updateProfile = async (req, res) => {
       updateData.Resume = { ...uploaded, fileName: file.originalname };
     }
 
-    // ── Project media ─────────────────────────
+    // ── Project media ─────────────────────────────────────────────────────────
     if (req.files?.projectMedia?.length) {
       const metas = JSON.parse(req.body.projectMediaMeta || "[]");
 
-      // Start from existing Projects or the ones sent in body
-      const projects = updateData.Projects
-        ? JSON.parse(
-            typeof updateData.Projects === "string"
-              ? updateData.Projects
-              : JSON.stringify(updateData.Projects),
-          )
+      // Start from the already-parsed Projects array (parsed above)
+      const projects = Array.isArray(updateData.Projects)
+        ? updateData.Projects
         : existing.Projects.map((p) => p.toObject());
 
       for (let i = 0; i < req.files.projectMedia.length; i++) {
@@ -219,6 +237,7 @@ exports.updateProfile = async (req, res) => {
 
     res.json(updated);
   } catch (err) {
+    console.error("updateProfile error:", err);
     res.status(500).json({ error: err.message });
   }
 };
