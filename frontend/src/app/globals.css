@@ -34,26 +34,26 @@ body {
     color 0.3s ease;
 }
 
-/* Native date input dark mode support */
+/* Native date input dark mode support */ /* Native date input styling */ /* Base: let browser render native icon */
+input[type="date"] {
+  cursor: pointer;
+  color-scheme: light;
+}
+
+/* Dark mode: browser automatically adjusts icon color */
 [data-theme="dark"] input[type="date"] {
   color-scheme: dark;
 }
 
-input[type="date"] {
-  cursor: pointer;
-}
-
+/* Icon base state */
 input[type="date"]::-webkit-calendar-picker-indicator {
   cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-  transition: background 0.2s;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
 }
 
+/* Hover: kill the black background without hiding the icon */
 input[type="date"]::-webkit-calendar-picker-indicator:hover {
-  background: var(--color-border, rgba(0, 0, 0, 0.1));
-}
-
-[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(1);
+  opacity: 1;
+  background-color: transparent !important;
 }
