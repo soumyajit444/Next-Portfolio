@@ -13,20 +13,54 @@ const VIOLET = "#7033fc";
 const VIOLET_LT = "#c084fc";
 const EASE_SHARP = "cubic-bezier(0.77,0,0.18,1)";
 
-// Panel glass style
-const panelStyle = {
+// ── Breakpoint Hook ───────────────────────────────────────────────────────────
+// Returns a string: "mobile" | "tablet" | "laptop" | "desktop"
+// mobile  : < 480px
+// tablet  : 480px – 767px
+// laptop  : 768px – 1023px
+// desktop : >= 1024px
+function useBreakpoint() {
+  const getBreakpoint = (w) => {
+    if (w < 480) return "mobile";
+    if (w < 768) return "tablet";
+    if (w < 1024) return "laptop";
+    return "desktop";
+  };
+
+  const [bp, setBp] = useState(() =>
+    typeof window !== "undefined"
+      ? getBreakpoint(window.innerWidth)
+      : "desktop",
+  );
+
+  useEffect(() => {
+    const onResize = () => setBp(getBreakpoint(window.innerWidth));
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  return bp;
+}
+
+// ── Responsive helpers ────────────────────────────────────────────────────────
+const isMobileOrTablet = (bp) => bp === "mobile" || bp === "tablet";
+const isMobile = (bp) => bp === "mobile";
+
+// ── Panel glass style (height responsive) ─────────────────────────────────────
+const getPanelStyle = (bp) => ({
   background: "var(--header-bg)",
   backdropFilter: "blur(12px) saturate(160%)",
   WebkitBackdropFilter: "blur(12px) saturate(160%)",
   border: "1px solid var(--color-border)",
   borderRadius: 16,
-  padding: "26px 28px 28px",
+  padding: isMobile(bp) ? "18px 16px 20px" : "26px 28px 28px",
   boxShadow: "var(--card-shadow)",
   position: "relative",
   overflow: "hidden",
-  height: 400,
+  // Fixed 400px on desktop/laptop, auto on mobile/tablet so content fits
+  height: isMobileOrTablet(bp) ? "auto" : 400,
   zIndex: 10,
-};
+});
 
 // Top shimmer line inside panels
 const PanelShimmer = () => (
@@ -65,11 +99,13 @@ function FieldPanel({ focused, children, style, revealProgress }) {
         zIndex: 20,
         opacity,
         transform: `translateY(${translateY}px)`,
+        // eslint-disable-next-line react/no-unknown-property
         transition:
           "opacity 0.06s linear, transform 0.06s linear, background 0.25s ease, border-color 0.25s ease",
         willChange: "opacity, transform",
         ...style,
-      }}>
+      }}
+    >
       <span
         style={{
           position: "absolute",
@@ -117,7 +153,8 @@ const getContactItems = (contactInfo) => [
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
-        strokeWidth="1.5">
+        strokeWidth="1.5"
+      >
         <rect x="2" y="4" width="20" height="16" rx="2" />
         <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
       </svg>
@@ -135,7 +172,8 @@ const getContactItems = (contactInfo) => [
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
-        strokeWidth="1.5">
+        strokeWidth="1.5"
+      >
         <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
         <rect x="2" y="9" width="4" height="12" />
         <circle cx="4" cy="4" r="2" />
@@ -154,7 +192,8 @@ const getContactItems = (contactInfo) => [
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
-        strokeWidth="1.5">
+        strokeWidth="1.5"
+      >
         <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.27h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.37a16 16 0 0 0 6.72 6.72l1.46-1.46a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7a2 2 0 0 1 1.72 2.04z" />
       </svg>
     ),
@@ -203,7 +242,8 @@ function ContactItem({
       onMouseEnter={() => c.href !== "#" && setHoveredContact(c.id)}
       onMouseLeave={() => setHoveredContact(null)}
       target={c.id === "linkedin" && c.href !== "#" ? "_blank" : undefined}
-      rel="noreferrer">
+      rel="noreferrer"
+    >
       <span
         style={{
           position: "absolute",
@@ -230,7 +270,8 @@ function ContactItem({
           flexShrink: 0,
           marginLeft: 10,
           transform: isHov ? "rotate(-8deg) scale(1.1)" : "none",
-        }}>
+        }}
+      >
         {c.icon}
       </div>
       <div style={{ flex: 1, paddingLeft: 12 }}>
@@ -241,11 +282,13 @@ function ContactItem({
             color: "var(--color-text-muted)",
             display: "block",
             marginBottom: 2,
-          }}>
+          }}
+        >
           {c.label}
         </span>
         <span
-          style={{ fontSize: 13, fontWeight: 600, color: "var(--color-text)" }}>
+          style={{ fontSize: 13, fontWeight: 600, color: "var(--color-text)" }}
+        >
           {c.value}
         </span>
       </div>
@@ -266,7 +309,8 @@ function ContactItem({
         viewBox="0 0 16 16"
         fill="none"
         stroke="currentColor"
-        strokeWidth="1.8">
+        strokeWidth="1.8"
+      >
         <path d="M2 14L14 2M14 2H5M14 2v9" />
       </svg>
     </a>
@@ -275,6 +319,8 @@ function ContactItem({
 
 // ── Main Contact Content (rendered inside portal) ─────────────────────────────
 function ContactContent({ profile, revealProgress }) {
+  const bp = useBreakpoint();
+
   const [formState, setFormState] = useState({
     name: "",
     phone: "",
@@ -290,6 +336,31 @@ function ContactContent({ profile, revealProgress }) {
 
   const contactInfo = profile?.ContactInfo || {};
   const CONTACTS = useMemo(() => getContactItems(contactInfo), [contactInfo]);
+
+  // ── Responsive derived values ─────────────────────────────────────────────
+  const isSmall = isMobileOrTablet(bp); // mobile or tablet  → stack
+  const isTiny = isMobile(bp); // mobile only       → tightest spacing
+
+  // Grid layout
+  const gridCols = isSmall ? "1fr" : "1fr 340px";
+
+  // Title font size — clamp handled per breakpoint
+  const titleFontSize = isTiny
+    ? "28px"
+    : isSmall
+      ? "32px"
+      : bp === "laptop"
+        ? "clamp(28px, 3.5vw, 44px)"
+        : "clamp(34px, 4vw, 52px)";
+
+  // Name/phone grid — single column on mobile
+  const formInnerGrid = isTiny ? "1fr" : "1fr 1fr";
+
+  // Textarea min-height
+  const textareaMinHeight = isTiny ? 110 : 150;
+
+  // Panel style (height-aware)
+  const computedPanelStyle = getPanelStyle(bp);
 
   // Canvas animation
   useEffect(() => {
@@ -416,12 +487,65 @@ function ContactContent({ profile, revealProgress }) {
         @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
         @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.8); } }
         .pf-input::placeholder, .pf-textarea::placeholder { color: var(--color-text-muted); font-weight: 400; }
+
+        /* ── Responsive overrides via media queries ─────────────────────── */
+
+        /* Scrollable overflow on small screens so portal content is reachable */
+        @media (max-width: 767px) {
+          .contact-section-inner {
+            overflow-y: auto !important;
+            -webkit-overflow-scrolling: touch;
+          }
+        }
+
+        /* Status badge text: wrap gracefully on tiny screens */
+        @media (max-width: 479px) {
+          .contact-status-text {
+            font-size: 8px !important;
+            letter-spacing: 0.08em !important;
+          }
+          /* Button text shrink */
+          .contact-send-btn {
+            padding: 11px 20px !important;
+            font-size: 11px !important;
+          }
+        }
       `}</style>
 
       <section
+        className="contact-section-inner"
         style={{
           color: "#fff",
-          padding: "72px 60px 100px",
+          // ── NO shorthand `padding` here — expanded to avoid React conflict ──
+          // Header is fixed ~60-72px tall; add extra clearance on small screens
+          paddingTop: isTiny
+            ? "88px" // mobile: 88px clears the ~60px header + breathing room
+            : isSmall
+              ? "80px" // tablet: same logic
+              : bp === "laptop"
+                ? "64px" // laptop
+                : "72px", // desktop (original)
+          paddingRight: isTiny
+            ? "16px"
+            : isSmall
+              ? "28px"
+              : bp === "laptop"
+                ? "40px"
+                : "60px",
+          paddingBottom: isTiny
+            ? "80px"
+            : isSmall
+              ? "88px"
+              : bp === "laptop"
+                ? "96px"
+                : "100px",
+          paddingLeft: isTiny
+            ? "16px"
+            : isSmall
+              ? "28px"
+              : bp === "laptop"
+                ? "40px"
+                : "60px",
           position: "fixed",
           top: 0,
           left: "50%",
@@ -429,20 +553,23 @@ function ContactContent({ profile, revealProgress }) {
           width: "100%",
           maxWidth: 1400,
           minHeight: "100vh",
+          maxHeight: isSmall ? "100vh" : "unset",
+          overflowY: isSmall ? "auto" : "unset",
           boxSizing: "border-box",
           display: "flex",
           flexDirection: "column",
-          justifyContent: "center",
+          justifyContent: isSmall ? "flex-start" : "center",
           pointerEvents: "none",
           zIndex: 1000,
-        }}>
+        }}
+      >
         <div style={{ pointerEvents: "auto", width: "100%" }}>
           {/* ── HEADER ── */}
           <div
             style={{
               position: "relative",
               zIndex: 10,
-              marginBottom: 44,
+              marginBottom: isTiny ? 24 : isSmall ? 32 : 44,
               display: "flex",
               alignItems: "flex-end",
               gap: 32,
@@ -450,20 +577,23 @@ function ContactContent({ profile, revealProgress }) {
               transform: `translateY(${(1 - titleReveal) * 28}px)`,
               transition: "opacity 0.06s linear, transform 0.06s linear",
               willChange: "opacity, transform",
-            }}>
+            }}
+          >
             <div
               onMouseEnter={() => setTitleHovered(true)}
-              onMouseLeave={() => setTitleHovered(false)}>
+              onMouseLeave={() => setTitleHovered(false)}
+            >
               <h2
                 style={{
-                  fontSize: "clamp(34px, 4vw, 52px)",
+                  fontSize: titleFontSize,
                   fontWeight: 200,
                   lineHeight: 1,
                   letterSpacing: "-0.03em",
                   margin: 0,
                   cursor: "default",
                   display: "inline-block",
-                }}>
+                }}
+              >
                 <span
                   style={{
                     display: "inline-block",
@@ -474,7 +604,8 @@ function ContactContent({ profile, revealProgress }) {
                     WebkitTextFillColor: "transparent",
                     backgroundClip: "text",
                     transition: `background-position 0.20s ${EASE_SHARP}`,
-                  }}>
+                  }}
+                >
                   Let's Connect
                 </span>
                 <span
@@ -486,7 +617,8 @@ function ContactContent({ profile, revealProgress }) {
                     borderRadius: 2,
                     position: "relative",
                     overflow: "hidden",
-                  }}>
+                  }}
+                >
                   <span
                     style={{
                       position: "absolute",
@@ -508,12 +640,13 @@ function ContactContent({ profile, revealProgress }) {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "1fr 340px",
-              gap: 22,
+              gridTemplateColumns: gridCols,
+              gap: isTiny ? 16 : 22,
               position: "relative",
               zIndex: 10,
               alignItems: "start",
-            }}>
+            }}
+          >
             {/* ── LEFT: Form ── */}
             <div
               style={{
@@ -523,12 +656,13 @@ function ContactContent({ profile, revealProgress }) {
                 transform: `translateY(${(1 - formPanelReveal) * 22}px)`,
                 transition: "opacity 0.06s linear, transform 0.06s linear",
                 willChange: "opacity, transform",
-              }}>
-              <div style={panelStyle}>
+              }}
+            >
+              <div style={computedPanelStyle}>
                 <PanelShimmer />
                 <h3
                   style={{
-                    fontSize: 16,
+                    fontSize: isTiny ? 14 : 16,
                     fontWeight: 700,
                     color: "var(--color-text)",
                     margin: "0 0 20px 0",
@@ -537,19 +671,23 @@ function ContactContent({ profile, revealProgress }) {
                     transform: `translateY(${(1 - formPanelReveal) * 12}px)`,
                     transition: "opacity 0.06s linear, transform 0.06s linear",
                     willChange: "opacity, transform",
-                  }}>
+                  }}
+                >
                   Send a Message
                 </h3>
+                {/* Name + Phone row — stacks to 1 col on mobile */}
                 <div
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
+                    gridTemplateColumns: formInnerGrid,
                     gap: 12,
                     marginBottom: 12,
-                  }}>
+                  }}
+                >
                   <FieldPanel
                     focused={focused === "name"}
-                    revealProgress={revealProgress}>
+                    revealProgress={revealProgress}
+                  >
                     <input
                       className="pf-input"
                       style={inputStyle}
@@ -565,7 +703,8 @@ function ContactContent({ profile, revealProgress }) {
                   </FieldPanel>
                   <FieldPanel
                     focused={focused === "phone"}
-                    revealProgress={revealProgress}>
+                    revealProgress={revealProgress}
+                  >
                     <input
                       className="pf-input"
                       style={inputStyle}
@@ -583,7 +722,8 @@ function ContactContent({ profile, revealProgress }) {
                 <FieldPanel
                   focused={focused === "email"}
                   style={{ marginBottom: 12 }}
-                  revealProgress={revealProgress}>
+                  revealProgress={revealProgress}
+                >
                   <input
                     className="pf-input"
                     style={inputStyle}
@@ -599,13 +739,14 @@ function ContactContent({ profile, revealProgress }) {
                 </FieldPanel>
                 <FieldPanel
                   focused={focused === "message"}
-                  revealProgress={revealProgress}>
+                  revealProgress={revealProgress}
+                >
                   <textarea
                     className="pf-textarea"
                     style={{
                       ...inputStyle,
                       resize: "none",
-                      minHeight: 150,
+                      minHeight: textareaMinHeight,
                       lineHeight: 1.6,
                     }}
                     name="message"
@@ -617,6 +758,8 @@ function ContactContent({ profile, revealProgress }) {
                   />
                 </FieldPanel>
               </div>
+
+              {/* Submit button row */}
               <div
                 style={{
                   display: "flex",
@@ -629,9 +772,12 @@ function ContactContent({ profile, revealProgress }) {
                   transform: `translateY(${(1 - submitBtnReveal) * 12}px)`,
                   transition: "opacity 0.06s linear, transform 0.06s linear",
                   willChange: "opacity, transform",
-                }}>
+                  flexWrap: "wrap", // so "MESSAGE SENT" badge wraps on tiny screens
+                }}
+              >
                 <button
                   type="button"
+                  className="contact-send-btn"
                   onClick={handleSendMessage}
                   onMouseEnter={() => setBtnHovered(true)}
                   onMouseLeave={() => setBtnHovered(false)}
@@ -652,7 +798,8 @@ function ContactContent({ profile, revealProgress }) {
                     transition: "border-color 0.3s ease",
                     clipPath:
                       "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))",
-                  }}>
+                  }}
+                >
                   <span
                     style={{
                       position: "absolute",
@@ -680,7 +827,8 @@ function ContactContent({ profile, revealProgress }) {
                     viewBox="0 0 16 16"
                     fill="none"
                     stroke="currentColor"
-                    strokeWidth="1.8">
+                    strokeWidth="1.8"
+                  >
                     <path d="M2 14L14 2M14 2H5M14 2v9" />
                   </svg>
                 </button>
@@ -694,14 +842,16 @@ function ContactContent({ profile, revealProgress }) {
                       alignItems: "center",
                       gap: 7,
                       animation: "fadeIn 0.4s ease",
-                    }}>
+                    }}
+                  >
                     <svg
                       width="14"
                       height="14"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
-                      strokeWidth="2.5">
+                      strokeWidth="2.5"
+                    >
                       <path d="M20 6L9 17l-5-5" />
                     </svg>
                     MESSAGE SENT
@@ -713,22 +863,25 @@ function ContactContent({ profile, revealProgress }) {
             {/* ── RIGHT: Contacts panel ── */}
             <div
               style={{
-                ...panelStyle,
+                ...computedPanelStyle,
+                // On stacked layout, don't force 400px — auto height already set via getPanelStyle
                 opacity: contactsPanelReveal,
                 transform: `translateY(${(1 - contactsPanelReveal) * 22}px)`,
                 transition: "opacity 0.06s linear, transform 0.06s linear",
                 willChange: "opacity, transform",
-              }}>
+              }}
+            >
               <PanelShimmer />
               <span
                 style={{
-                  fontSize: 16,
+                  fontSize: isTiny ? 14 : 16,
                   fontWeight: 700,
                   color: "var(--color-text)",
                   margin: "0 0 20px 0",
                   letterSpacing: "-0.01em",
                   display: "block",
-                }}>
+                }}
+              >
                 My Contacts
               </span>
               <div style={{ display: "flex", flexDirection: "column" }}>
@@ -748,14 +901,16 @@ function ContactContent({ profile, revealProgress }) {
                   display: "flex",
                   alignItems: "center",
                   gap: 8,
-                  marginTop: 60,
+                  // On desktop push to bottom of 400px panel; on mobile just margin
+                  marginTop: isSmall ? 24 : 60,
                   paddingTop: 18,
                   borderTop: "1px solid rgba(255,255,255,0.08)",
                   opacity: statusReveal,
                   transform: `translateY(${(1 - statusReveal) * 8}px)`,
                   transition: "opacity 0.06s linear, transform 0.06s linear",
                   willChange: "opacity, transform",
-                }}>
+                }}
+              >
                 <span
                   style={{
                     width: 7,
@@ -769,11 +924,13 @@ function ContactContent({ profile, revealProgress }) {
                   }}
                 />
                 <span
+                  className="contact-status-text"
                   style={{
                     fontSize: 9,
                     letterSpacing: "0.14em",
                     color: "var(--color-text-muted)",
-                  }}>
+                  }}
+                >
                   OPEN TO WORK · RESPONSE WITHIN 24H
                 </span>
               </div>
@@ -815,7 +972,6 @@ export default function ContactSection({ profile }) {
       localProgress = Math.max(0, Math.min(1, localProgress));
 
       // Symmetric smoothstep easing: identical curve for both directions
-      // Starts slow → accelerates → slows down (zero delay sync)
       const easedProgress = localProgress * (3 - 2 * localProgress);
 
       setRevealProgress(easedProgress);
@@ -836,7 +992,8 @@ export default function ContactSection({ profile }) {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-      }}>
+      }}
+    >
       {mounted &&
         createPortal(
           <ContactContent profile={profile} revealProgress={revealProgress} />,
