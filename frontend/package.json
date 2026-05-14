@@ -9,10 +9,13 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@amcharts/amcharts4": "^4.10.40",
     "@splinetool/react-spline": "^4.1.0",
     "@tailwindcss/forms": "^0.5.11",
     "@tailwindcss/typography": "^0.5.19",
     "axios": "^1.16.0",
+    "d3": "^7.9.0",
+    "d3-cloud": "^1.2.9",
     "flowbite": "^4.0.1",
     "framer-motion": "^12.38.0",
     "gsap": "^3.15.0",
