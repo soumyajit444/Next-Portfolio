@@ -169,6 +169,7 @@ function SkillBar({ label, pct, delay, shouldAnimate }) {
 const Profile = ({ profile }) => {
   const fullName =
     `${profile?.FirstName || ""} ${profile?.LastName || ""}`.trim();
+  const avatarUrl = profile?.ProfilePicture?.url;
   const jobRole = profile?.CurrentJobRole || "Developer";
   const bioText = profile?.Bio || "No bio available.";
   const initials =
@@ -418,26 +419,45 @@ const Profile = ({ profile }) => {
                   flex: 1,
                 }}
                 className="profile-card-inner profile-card-mobile">
-                <div
-                  style={{
-                    width: 72,
-                    height: 72,
-                    borderRadius: "50%",
-                    background: "linear-gradient(135deg, #7c3aed, #a78bfa)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 28,
-                    fontWeight: 700,
-                    color: "#fff",
-                    marginBottom: 10,
-                    boxShadow: "0 8px 20px -5px rgba(124, 58, 237, 0.4)",
-                    flexShrink: 0,
-                    marginLeft: "auto",
-                    marginRight: "auto",
-                  }}>
-                  {initials}
-                </div>
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt={fullName}
+                    style={{
+                      width: 72,
+                      height: 72,
+                      borderRadius: "50%",
+                      objectFit: "cover",
+                      border: "2px solid rgba(139,92,246,0.4)",
+                      boxShadow: "0 8px 20px -5px rgba(124,58,237,0.4)",
+                      marginBottom: 10,
+                      marginLeft: "auto",
+                      marginRight: "auto",
+                      display: "block",
+                    }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: 72,
+                      height: 72,
+                      borderRadius: "50%",
+                      background: "linear-gradient(135deg, #7c3aed, #a78bfa)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 28,
+                      fontWeight: 700,
+                      color: "#fff",
+                      marginBottom: 10,
+                      boxShadow: "0 8px 20px -5px rgba(124, 58, 237, 0.4)",
+                      flexShrink: 0,
+                      marginLeft: "auto",
+                      marginRight: "auto",
+                    }}>
+                    {initials}
+                  </div>
+                )}
                 <h2
                   className="profile-name"
                   style={{
