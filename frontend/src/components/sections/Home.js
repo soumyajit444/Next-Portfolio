@@ -63,12 +63,107 @@ const itemVariantsInstant = {
   },
 };
 
+// ─── FIXED AnimatedCounter Component with Delay Support ───
+function AnimatedCounter({
+  value,
+  suffix = "+",
+  startAnimation = false,
+  duration = 2000,
+  delay = 0,
+}) {
+  const [displayValue, setDisplayValue] = useState(0);
+  const valueRef = useRef(0);
+  const animationRef = useRef(null);
+  const delayTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    // Reset when animation hasn't started or value is 0
+    if (!startAnimation || value === 0) {
+      setDisplayValue(0);
+      valueRef.current = 0;
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
+      }
+      if (delayTimeoutRef.current) {
+        clearTimeout(delayTimeoutRef.current);
+        delayTimeoutRef.current = null;
+      }
+      return;
+    }
+
+    // Handle delay before starting animation
+    delayTimeoutRef.current = setTimeout(() => {
+      let startTime = null;
+
+      // Smooth ease-in-out cubic: natural acceleration & deceleration
+      const easeInOutCubic = (t) =>
+        t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+      const animate = (currentTime) => {
+        if (!startTime) startTime = currentTime;
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+
+        // Apply easing for smooth motion
+        const easedProgress = easeInOutCubic(progress);
+
+        // Interpolate with decimal precision for smooth visual flow
+        const interpolated = easedProgress * value;
+
+        // Round only for display - keeps internal animation smooth
+        const roundedValue = Math.round(interpolated);
+
+        // Only update state when displayed value actually changes
+        if (roundedValue !== valueRef.current) {
+          valueRef.current = roundedValue;
+          setDisplayValue(roundedValue);
+        }
+
+        // Continue animation or finalize
+        if (progress < 1) {
+          animationRef.current = requestAnimationFrame(animate);
+        } else {
+          // Ensure we land exactly on target value
+          if (valueRef.current !== value) {
+            valueRef.current = value;
+            setDisplayValue(value);
+          }
+        }
+      };
+
+      // Start the animation loop
+      animationRef.current = requestAnimationFrame(animate);
+    }, delay);
+
+    // Cleanup on unmount or dependency change
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
+      }
+      if (delayTimeoutRef.current) {
+        clearTimeout(delayTimeoutRef.current);
+        delayTimeoutRef.current = null;
+      }
+    };
+  }, [value, startAnimation, duration, delay]);
+
+  return (
+    <span
+      style={{ display: "inline-block", fontVariantNumeric: "tabular-nums" }}>
+      {displayValue}
+      {suffix}
+    </span>
+  );
+}
+
 export default function Home({ scrollProgress = 0, profile, isLoaded }) {
   const [mounted, setMounted] = useState(false);
   const [theme, setTheme] = useState("light");
   const [splineError, setSplineError] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [isDownloading, setIsDownloading] = useState(false); // ← Download state
+  const [isDownloading, setIsDownloading] = useState(false);
   const splineContainerRef = useRef(null);
   const [triggerAnimation, setTriggerAnimation] = useState(false);
   const hasAnimatedRef = useRef(false);
@@ -147,7 +242,6 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
 
       const link = document.createElement("a");
       link.href = blobUrl;
-      // Ensure proper file extension
       const fileExt = fileName.includes(".") ? "" : ".pdf";
       link.download = `${fileName}${fileExt}`;
       document.body.appendChild(link);
@@ -157,7 +251,6 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
       window.URL.revokeObjectURL(blobUrl);
     } catch (error) {
       console.error("Download error:", error);
-      // Fallback: open in new tab
       window.open(resumeUrl, "_blank");
       alert(
         "Opening resume in new tab. If download doesn't start, right-click and 'Save As'.",
@@ -165,6 +258,25 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
     } finally {
       setIsDownloading(false);
     }
+  };
+
+  const handleContactClick = (e) => {
+    e.preventDefault();
+
+    // Scroll to contact section if the global function exists
+    if (typeof window.scrollToSection === "function") {
+      window.scrollToSection(4); // 4 = CONTACT index from navLinks
+    }
+
+    // Update URL hash for deep linking
+    if (window.history.replaceState) {
+      window.history.replaceState(null, "", "#contact");
+    }
+
+    // Optional: Notify header to update active state via custom event
+    window.dispatchEvent(
+      new CustomEvent("navChange", { detail: { index: 4 } }),
+    );
   };
 
   if (!mounted) return null;
@@ -182,6 +294,7 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
     profile?.Bio || "Building scalable, high-performance web applications...";
   const yearsExp = profile?.YearsOfExperience || 0;
   const skillsCount = profile?.Skills?.length || 0;
+  const toolsCount = profile?.IndustryTools?.length || 0;
 
   const jobRoles =
     Array.isArray(profile?.JobRoles) && profile.JobRoles.length > 0
@@ -208,7 +321,7 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
     return (
       <section
         style={{
-          width: "100%",
+          width: "115%",
           minHeight: "100%",
           display: "flex",
           flexDirection: "column",
@@ -217,6 +330,13 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
           color: "var(--color-text)",
           fontFamily: "var(--font-primary)",
           overflowX: "hidden",
+          position: "relative",
+          paddingRight: "15%",
+
+          WebkitMaskImage:
+            "linear-gradient(to right, rgba(0,0,0,1) 84%, rgba(0,0,0,0) 100%)",
+          maskImage:
+            "linear-gradient(to right, rgba(0,0,0,1) 84%, rgba(0,0,0,0) 100%)",
         }}>
         {/* ── TOP: Spline ── */}
         <div
@@ -237,10 +357,6 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
               height: "100%",
               transformOrigin: "center center",
               willChange: "transform, opacity",
-              WebkitMaskImage:
-                "linear-gradient(to bottom, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)",
-              maskImage:
-                "linear-gradient(to bottom, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)",
             }}>
             {!splineError ? (
               <Spline
@@ -389,11 +505,12 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
             <motion.p
               variants={iVariants}
               style={{
-                fontSize: "0.875rem",
-                lineHeight: 1.75,
+                fontSize: "0.72rem",
+                lineHeight: 1.45,
+                letterSpacing: "0.01em",
                 color: "var(--color-text-muted)",
-                maxWidth: "90%",
-                marginBottom: "1rem",
+                maxWidth: "94%",
+                marginBottom: "0.75rem",
               }}>
               {bio}
             </motion.p>
@@ -492,6 +609,7 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
               </button>
 
               <button
+                onClick={handleContactClick}
                 style={{
                   padding: "11px 24px",
                   background: "transparent",
@@ -518,9 +636,9 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
                 justifyContent: "center",
               }}>
               {[
-                { value: `${yearsExp}+`, label: "Years exp." },
-                { value: `${skillsCount}+`, label: "Skills" },
-                { value: "∞", label: "Cups of coffee" },
+                { value: yearsExp, label: "Years exp." },
+                { value: skillsCount, label: "Skills" },
+                { value: toolsCount, label: "Industry tools" },
               ].map((stat, i, arr) => (
                 <div
                   key={stat.label}
@@ -532,7 +650,12 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
                         fontWeight: 700,
                         marginBottom: "4px",
                       }}>
-                      {stat.value}
+                      <AnimatedCounter
+                        value={stat.value}
+                        startAnimation={triggerAnimation}
+                        duration={2000}
+                        delay={1400} // ← Delay starts after fade-in (1.0s + 0.5s = 1.5s ≈ 1400ms buffer)
+                      />
                     </div>
                     <div
                       style={{
@@ -557,6 +680,21 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
             </motion.div>
           </div>
         </div>
+        {/* ── Mobile right-side blend overlay ── */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            right: 0,
+            width: "22%",
+            height: "100%",
+            pointerEvents: "none",
+            zIndex: 30,
+
+            background:
+              "linear-gradient(to right, rgba(0,0,0,0), var(--color-bg))",
+          }}
+        />
       </section>
     );
   }
@@ -631,7 +769,7 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
           <motion.h1
             variants={iVariants}
             style={{
-              fontSize: "clamp(2.8rem, 5vw, 4.2rem)",
+              fontSize: "clamp(2.2rem, 10vw, 3rem)",
               fontWeight: 700,
               lineHeight: 1.05,
               letterSpacing: "-0.03em",
@@ -644,7 +782,7 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
           <motion.h1
             variants={iVariants}
             style={{
-              fontSize: "clamp(2.8rem, 5vw, 4.2rem)",
+              fontSize: "clamp(2.2rem, 10vw, 3rem)",
               fontWeight: 700,
               lineHeight: 1.05,
               letterSpacing: "-0.03em",
@@ -776,6 +914,18 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
             </button>
 
             <button
+              onClick={handleContactClick}
+              type="button"
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "#6d28d9";
+                e.currentTarget.style.color = "var(--color-bg)";
+                e.currentTarget.style.borderColor = "#6d28d9";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "transparent";
+                e.currentTarget.style.color = "var(--color-text-muted)";
+                e.currentTarget.style.borderColor = "var(--color-border)";
+              }}
               style={{
                 padding: "12px 28px",
                 background: "transparent",
@@ -786,6 +936,7 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
                 border: "0.5px solid var(--color-border)",
                 borderRadius: "2px",
                 cursor: "pointer",
+                transition: "all 0.2s ease",
               }}>
               Contact Me
             </button>
@@ -798,9 +949,9 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
             transition={{ delay: 1.0, duration: 0.5 }}
             style={{ display: "flex", gap: "2rem" }}>
             {[
-              { value: `${yearsExp}+`, label: "Years exp." },
-              { value: `${skillsCount}+`, label: "Skills" },
-              { value: "∞", label: "Cups of coffee" },
+              { value: yearsExp, label: "Years exp." },
+              { value: skillsCount, label: "Skills" },
+              { value: toolsCount, label: "Industry tools" },
             ].map((stat, i, arr) => (
               <div key={stat.label} style={{ display: "flex", gap: "2rem" }}>
                 <div>
@@ -810,7 +961,12 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
                       fontWeight: 700,
                       marginBottom: "4px",
                     }}>
-                    {stat.value}
+                    <AnimatedCounter
+                      value={stat.value}
+                      startAnimation={triggerAnimation}
+                      duration={2000}
+                      delay={1400} // ← Delay starts after fade-in (1.0s + 0.5s = 1.5s ≈ 1400ms buffer)
+                    />
                   </div>
                   <div
                     style={{
