@@ -25,8 +25,13 @@ export const createProfile = async (data, secret) => {
 
   // ── Top-level file uploads ────────────────────────────────────────────────
   if (data.profilePicture instanceof File)
-    formData.append("profilePicture", data.profilePicture);
-  if (data.resume instanceof File) formData.append("resume", data.resume);
+    formData.append(
+      "profilePicture",
+      data.profilePicture,
+      data.profilePicture.name,
+    );
+  if (data.resume instanceof File)
+    formData.append("resume", data.resume, data.resume.name);
 
   // ── Primitive arrays ──────────────────────────────────────────────────────
   appendPrimitiveArray(formData, "JobRoles", data.JobRoles);
@@ -213,8 +218,13 @@ export const updateProfile = async (slug, data, secret) => {
   // Sending nothing means the backend controller's  `if (req.files?.profilePicture?.[0])`
   // branch is skipped and the existing Cloudinary asset is untouched.
   if (data.profilePicture instanceof File)
-    formData.append("profilePicture", data.profilePicture);
-  if (data.resume instanceof File) formData.append("resume", data.resume);
+    formData.append(
+      "profilePicture",
+      data.profilePicture,
+      data.profilePicture.name,
+    );
+  if (data.resume instanceof File)
+    formData.append("resume", data.resume, data.resume.name);
 
   const response = await axiosInstance.put(
     `/api/profile/${slug}?secret=${secret}`,

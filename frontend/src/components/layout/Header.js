@@ -72,15 +72,13 @@ export default function Header() {
           zIndex: 9999,
           display: "flex",
           justifyContent: "center",
-          // Use separate padding props to avoid shorthand conflict
           paddingTop: scrolled ? "10px" : "16px",
           paddingBottom: scrolled ? "10px" : "16px",
           paddingLeft: "24px",
           paddingRight: "24px",
           transition: "padding 0.4s ease",
           pointerEvents: "none",
-        }}
-      >
+        }}>
         <nav
           className="header-nav-pill"
           style={{
@@ -112,10 +110,8 @@ export default function Header() {
               "border-color 0.4s ease",
               "box-shadow 0.4s ease",
             ].join(", "),
-          }}
-        >
+          }}>
           {/* ── Desktop: Portfolio brand (left) ── */}
-          {/* ── Mobile: hidden here, shown on right via CSS ── */}
           <Link
             href="/"
             className="header-brand-desktop"
@@ -131,8 +127,7 @@ export default function Header() {
               willChange: "font-size, font-weight",
             }}
             onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.55")}
-            onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
-          >
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}>
             Portfolio
           </Link>
 
@@ -144,8 +139,7 @@ export default function Header() {
               alignItems: "center",
               gap: "28px",
               marginLeft: "auto",
-            }}
-          >
+            }}>
             {navLinks.map((link) => (
               <a
                 key={link.label}
@@ -166,8 +160,7 @@ export default function Header() {
                     activeIndex === link.index
                       ? "var(--color-text)"
                       : "var(--color-text-muted)")
-                }
-              >
+                }>
                 <span className="roll-wrapper">
                   <span className="roll-track">
                     <span className="roll-item">{link.label}</span>
@@ -195,64 +188,75 @@ export default function Header() {
               flexShrink: 0,
               marginLeft: "4px",
             }}
-            className="header-right"
-          >
+            className="header-right">
             <SoundToggle />
             <ThemeToggle />
           </div>
 
-          {/* ── Mobile row: ONLY "Portfolio" button — top-right, acts as menu trigger ── */}
-          {/* Hidden on desktop via CSS. No hamburger — Portfolio IS the toggle. */}
+          {/* ── Mobile row: ThemeToggle (icon) + "Portfolio" dropdown trigger ── */}
           <div className="mobile-nav-row">
-            <button
-              onClick={() => setMenuOpen((v) => !v)}
-              aria-label="Toggle navigation menu"
-              aria-expanded={menuOpen}
+            <div
               style={{
-                marginLeft: "auto", // pushes to the right
-                background: "transparent",
-                border: "none",
-                cursor: "pointer",
-                padding: 0,
-                flexShrink: 0,
+                marginLeft: "auto",
                 display: "flex",
                 alignItems: "center",
-                gap: "6px",
-              }}
-            >
-              {/* "Portfolio" label */}
-              <span
+              }}>
+              {/* Icon-only ThemeToggle for mobile */}
+              <ThemeToggle iconOnly />
+
+              {/* "Portfolio" dropdown trigger */}
+              <button
+                onClick={() => setMenuOpen((v) => !v)}
+                aria-label="Toggle navigation menu"
+                aria-expanded={menuOpen}
                 style={{
-                  color: "var(--color-text)",
-                  fontWeight: "700",
-                  fontSize: "1rem",
-                  letterSpacing: "-0.02em",
-                  fontFamily: "var(--font-primary)",
-                  transition: "opacity 0.2s",
-                  opacity: menuOpen ? 0.6 : 1,
-                }}
-              >
-                Portfolio
-              </span>
-              {/* Small chevron that flips when open */}
-              <svg
-                width="10"
-                height="10"
-                viewBox="0 0 10 10"
-                fill="none"
-                stroke="var(--color-text-muted)"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                style={{
-                  transition: "transform 0.25s ease",
-                  transform: menuOpen ? "rotate(180deg)" : "rotate(0deg)",
-                  marginTop: "1px",
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: "6px 2px",
                   flexShrink: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  borderRadius: "8px",
+                  transition: "background 0.2s",
                 }}
-              >
-                <path d="M2 3.5L5 6.5L8 3.5" />
-              </svg>
-            </button>
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.background = "rgba(255,255,255,0.08)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.background = "transparent")
+                }>
+                <span
+                  style={{
+                    color: "var(--color-text)",
+                    fontWeight: "700",
+                    fontSize: "1rem",
+                    letterSpacing: "-0.02em",
+                    fontFamily: "var(--font-primary)",
+                    transition: "opacity 0.2s",
+                    opacity: menuOpen ? 0.6 : 1,
+                  }}>
+                  Portfolio
+                </span>
+                <svg
+                  width="10"
+                  height="10"
+                  viewBox="0 0 10 10"
+                  fill="none"
+                  stroke="var(--color-text-muted)"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  style={{
+                    transition: "transform 0.25s ease",
+                    transform: menuOpen ? "rotate(180deg)" : "rotate(0deg)",
+                    marginTop: "1px",
+                    flexShrink: 0,
+                  }}>
+                  <path d="M2 3.5L5 6.5L8 3.5" />
+                </svg>
+              </button>
+            </div>
           </div>
         </nav>
       </header>
@@ -278,8 +282,7 @@ export default function Header() {
             paddingRight: 0,
             boxShadow: "0 8px 40px rgba(0,0,0,0.45)",
             animation: "dropdownIn 0.22s cubic-bezier(0.16,1,0.3,1) both",
-          }}
-        >
+          }}>
           {navLinks.map((link, i) => (
             <a
               key={link.label}
@@ -311,9 +314,7 @@ export default function Header() {
                   activeIndex === link.index
                     ? "var(--color-text)"
                     : "var(--color-text-muted)")
-              }
-            >
-              {/* Active indicator dot */}
+              }>
               <span
                 style={{
                   width: 5,
@@ -384,6 +385,7 @@ export default function Header() {
         .header-links         { display: flex !important; }
         .header-right         { display: flex !important; }
         .mobile-nav-row       { display: none !important; }
+        .mobile-theme-toggle  { display: none !important; }
 
         /* ── Mobile (≤600px): shrink nav to pill around "Portfolio" only ── */
         @media (max-width: 600px) {
@@ -395,6 +397,20 @@ export default function Header() {
             align-items: center;
             width: 100%;
           }
+          .mobile-theme-toggle {
+            display: flex !important;
+            align-items: center;
+          }
+          /* Compact ThemeToggle sizing for mobile */
+          .mobile-theme-toggle button {
+            width: 32px !important;
+            height: 32px !important;
+            padding: 0 !important;
+          }
+          .mobile-theme-toggle svg {
+            width: 14px !important;
+            height: 14px !important;
+          }
           /* The header flex container: right-align the pill */
           .header-nav-pill {
             width: fit-content !important;
@@ -402,8 +418,8 @@ export default function Header() {
             max-width: unset !important;
             margin-left: auto !important;
             margin-right: 0 !important;
-            padding-left: 14px !important;
-            padding-right: 14px !important;
+            padding-left: 10px !important;
+            padding-right: 10px !important;
           }
         }
         /* ── Mobile dropdown: right-aligned, auto-width to match pill ── */

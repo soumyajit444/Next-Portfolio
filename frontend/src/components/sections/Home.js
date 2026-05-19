@@ -68,9 +68,9 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
   const [theme, setTheme] = useState("light");
   const [splineError, setSplineError] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false); // ← Download state
   const splineContainerRef = useRef(null);
   const [triggerAnimation, setTriggerAnimation] = useState(false);
-  // Tracks whether we've ever completed the initial load animation
   const hasAnimatedRef = useRef(false);
 
   // 1. Handle Theme, Mounting & Responsive
@@ -85,11 +85,8 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
       const mobile = window.innerWidth < 768;
       setIsMobile((prev) => {
         if (prev !== mobile) {
-          // Layout branch is switching — if already animated once, re-trigger
-          // instantly so the new branch mounts straight to visible state
           if (hasAnimatedRef.current) {
             setTriggerAnimation(false);
-            // Use rAF so the hidden frame actually commits before flipping back
             requestAnimationFrame(() => setTriggerAnimation(true));
           }
         }
@@ -129,9 +126,50 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
     splineContainerRef.current.style.transform = `scale(${scale})`;
   }, [scrollProgress, isMobile]);
 
+  // ── Resume Download Handler ──
+  const handleDownloadResume = async () => {
+    const resumeUrl = profile?.Resume?.url;
+    const fileName = profile?.Resume?.fileName || "Soumyajit_Sengupta_Resume";
+
+    if (!resumeUrl) {
+      alert("Resume not available yet. Please check back later.");
+      return;
+    }
+
+    setIsDownloading(true);
+
+    try {
+      const response = await fetch(resumeUrl);
+      if (!response.ok) throw new Error("Failed to fetch resume");
+
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      // Ensure proper file extension
+      const fileExt = fileName.includes(".") ? "" : ".pdf";
+      link.download = `${fileName}${fileExt}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error("Download error:", error);
+      // Fallback: open in new tab
+      window.open(resumeUrl, "_blank");
+      alert(
+        "Opening resume in new tab. If download doesn't start, right-click and 'Save As'.",
+      );
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   if (!mounted) return null;
 
-  // Pick animation variants: instant on resize re-trigger, full on initial load
+  // Pick animation variants
   const cVariants = hasAnimatedRef.current
     ? containerVariantsInstant
     : containerVariants;
@@ -145,20 +183,19 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
   const yearsExp = profile?.YearsOfExperience || 0;
   const skillsCount = profile?.Skills?.length || 0;
 
-  const jobRoles = profile?.CurrentJobRole
-    ? [profile.CurrentJobRole]
-    : [
-        "Job Role not added yet",
-        "Please wait for next update",
-        "Profile under development",
-      ];
+  const jobRoles =
+    Array.isArray(profile?.JobRoles) && profile.JobRoles.length > 0
+      ? profile.JobRoles
+      : [
+          "Job Role not added yet",
+          "Please wait for next update",
+          "Profile under development",
+        ];
 
-  const skillNames = profile?.Skills?.map((s) => s.Name) || [
-    "React",
-    "Next.js",
-    "TypeScript",
-    "Tailwind",
-  ];
+  const skillNames =
+    Array.isArray(profile?.Skills) && profile.Skills.length > 0
+      ? profile.Skills.map((s) => s?.Name).filter(Boolean)
+      : ["Skill yet to be added, profile under development."];
 
   const LIGHT_SCENE = "/light-chips.spline";
   const DARK_SCENE = "/dark-chips.spline";
@@ -166,7 +203,6 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
 
   /* ─────────────────────────────────────────
      MOBILE LAYOUT
-     Three-zone flex: TOP (name/role) / CENTER (bio+marquee) / BOTTOM (buttons+stats)
   ───────────────────────────────────────── */
   if (isMobile) {
     return (
@@ -182,7 +218,7 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
           fontFamily: "var(--font-primary)",
           overflowX: "hidden",
         }}>
-        {/* ── TOP: Spline (30% viewport height) ── */}
+        {/* ── TOP: Spline ── */}
         <div
           style={{
             width: "100%",
@@ -201,7 +237,6 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
               height: "100%",
               transformOrigin: "center center",
               willChange: "transform, opacity",
-              /* Fade out bottom edge into the content below */
               WebkitMaskImage:
                 "linear-gradient(to bottom, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)",
               maskImage:
@@ -245,20 +280,19 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
           </motion.div>
         </div>
 
-        {/* ── BOTTOM: Three-zone flex layout (TOP/MIDDLE/BOTTOM content) ── */}
+        {/* ── BOTTOM: Three-zone flex layout ── */}
         <div
           style={{
             width: "100%",
             flex: 1,
             display: "flex",
             flexDirection: "column",
-            /* Push zones to top / center / bottom */
             justifyContent: "space-between",
             padding: "1rem 1.5rem 1.5rem",
             textAlign: "center",
             boxSizing: "border-box",
           }}>
-          {/* ── ZONE 1 (TOP): Name + Role (stuck below spline) ── */}
+          {/* ── ZONE 1 (TOP): Name + Role ── */}
           <motion.div
             variants={cVariants}
             initial="hidden"
@@ -312,7 +346,6 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
               </div>
             </motion.div>
 
-            {/* First Name */}
             <motion.h1
               variants={iVariants}
               style={{
@@ -326,7 +359,6 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
               {firstName}
             </motion.h1>
 
-            {/* Last Name */}
             <motion.h1
               variants={iVariants}
               style={{
@@ -351,11 +383,9 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
               flexDirection: "column",
               alignItems: "center",
               width: "100%",
-              /* Allow this zone to grow and center itself */
               flex: 1,
               justifyContent: "center",
             }}>
-            {/* Bio */}
             <motion.p
               variants={iVariants}
               style={{
@@ -368,7 +398,6 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
               {bio}
             </motion.p>
 
-            {/* Marquee */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: triggerAnimation ? 1 : 0 }}
@@ -404,7 +433,7 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
             </motion.div>
           </motion.div>
 
-          {/* ── ZONE 3 (BOTTOM): Buttons + Stats (stuck to bottom) ── */}
+          {/* ── ZONE 3 (BOTTOM): Buttons + Stats ── */}
           <div style={{ width: "100%" }}>
             {/* Buttons */}
             <motion.div
@@ -421,10 +450,15 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
                 justifyContent: "center",
                 flexWrap: "wrap",
               }}>
+              {/* Download Resume Button - MOBILE */}
               <button
+                onClick={handleDownloadResume}
+                disabled={isDownloading}
                 style={{
                   padding: "11px 24px",
-                  background: "var(--color-text)",
+                  background: isDownloading
+                    ? "var(--color-text-muted)"
+                    : "var(--color-text)",
                   color: "var(--color-bg)",
                   fontSize: "11px",
                   fontWeight: 600,
@@ -432,10 +466,31 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
                   textTransform: "uppercase",
                   border: "none",
                   borderRadius: "2px",
-                  cursor: "pointer",
+                  cursor: isDownloading ? "not-allowed" : "pointer",
+                  opacity: isDownloading ? 0.7 : 1,
+                  transition: "opacity 0.2s ease",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
                 }}>
-                Download Resume
+                {isDownloading ? (
+                  <>
+                    <svg
+                      className="animate-spin h-4 w-4"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2">
+                      <circle cx="12" cy="12" r="10" strokeOpacity="0.3" />
+                      <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round" />
+                    </svg>
+                    Downloading...
+                  </>
+                ) : (
+                  "Download Resume"
+                )}
               </button>
+
               <button
                 style={{
                   padding: "11px 24px",
@@ -508,8 +563,6 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
 
   /* ─────────────────────────────────────────
      DESKTOP / TABLET LAYOUT
-     Left column: 3-zone flex (top / center / bottom)
-     Right column: Spline (unchanged — 120% width + right fade)
   ───────────────────────────────────────── */
   return (
     <section
@@ -526,11 +579,9 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
           height: "100%",
           display: "flex",
           flexDirection: "column",
-          /* Three zones pushed to top / center / bottom */
           justifyContent: "space-between",
           paddingLeft: "clamp(2rem, 5vw, 4rem)",
           paddingRight: "2rem",
-          /* Top padding accounts for navbar height */
           paddingTop: "clamp(4.5rem, 8vh, 6rem)",
           paddingBottom: "clamp(2rem, 4vh, 3rem)",
           position: "relative",
@@ -547,7 +598,6 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
             flexDirection: "column",
             alignItems: "flex-start",
           }}>
-          {/* Label / Typewriter */}
           <motion.div variants={iVariants} style={{ marginBottom: "1rem" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
               <span
@@ -578,7 +628,6 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
             </div>
           </motion.div>
 
-          {/* First Name */}
           <motion.h1
             variants={iVariants}
             style={{
@@ -592,7 +641,6 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
             {firstName}
           </motion.h1>
 
-          {/* Last Name */}
           <motion.h1
             variants={iVariants}
             style={{
@@ -616,8 +664,8 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
             display: "flex",
             flexDirection: "column",
             alignItems: "flex-start",
+            gap: "1rem",
           }}>
-          {/* Bio */}
           <motion.p
             variants={iVariants}
             style={{
@@ -632,7 +680,6 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
             {bio}
           </motion.p>
 
-          {/* Tech Marquee */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: triggerAnimation ? 1 : 0 }}
@@ -677,10 +724,25 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
             }}
             transition={{ delay: 0.8, duration: 0.5 }}
             style={{ display: "flex", gap: "12px" }}>
+            {/* Download Resume Button - DESKTOP */}
             <button
+              onClick={handleDownloadResume}
+              disabled={isDownloading}
+              onMouseEnter={(e) => {
+                if (!isDownloading) {
+                  e.currentTarget.style.background = "#6d28d9";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isDownloading) {
+                  e.currentTarget.style.background = "var(--color-text)";
+                }
+              }}
               style={{
                 padding: "12px 28px",
-                background: "var(--color-text)",
+                background: isDownloading
+                  ? "var(--color-text-muted)"
+                  : "var(--color-text)",
                 color: "var(--color-bg)",
                 fontSize: "12px",
                 fontWeight: 600,
@@ -688,10 +750,31 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
                 textTransform: "uppercase",
                 border: "none",
                 borderRadius: "2px",
-                cursor: "pointer",
+                cursor: isDownloading ? "not-allowed" : "pointer",
+                opacity: isDownloading ? 0.7 : 1,
+                transition: "all 0.2s ease",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
               }}>
-              Download Resume
+              {isDownloading ? (
+                <>
+                  <svg
+                    className="animate-spin h-4 w-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2">
+                    <circle cx="12" cy="12" r="10" strokeOpacity="0.3" />
+                    <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round" />
+                  </svg>
+                  Downloading...
+                </>
+              ) : (
+                "Download Resume"
+              )}
             </button>
+
             <button
               style={{
                 padding: "12px 28px",
@@ -753,7 +836,7 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
         </div>
       </div>
 
-      {/* ── RIGHT COLUMN: Spline (unchanged) ── */}
+      {/* ── RIGHT COLUMN: Spline ── */}
       <div
         style={{
           width: "50%",
@@ -761,7 +844,6 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
           overflow: "visible",
           position: "relative",
         }}>
-        {/* Spline Container with Fade In */}
         <motion.div
           ref={splineContainerRef}
           initial={{ opacity: 0 }}
@@ -800,7 +882,6 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
           )}
         </motion.div>
 
-        {/* Fade buffer */}
         <div
           style={{
             position: "absolute",

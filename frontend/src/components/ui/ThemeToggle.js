@@ -1,8 +1,9 @@
+// components/ui/ThemeToggle.jsx
 "use client";
 
 import { useEffect, useState } from "react";
 
-export default function ThemeToggle() {
+export default function ThemeToggle({ iconOnly = false }) {
   const [theme, setTheme] = useState("dark");
   const [mounted, setMounted] = useState(false);
 
@@ -27,6 +28,43 @@ export default function ThemeToggle() {
 
   const isDark = theme === "dark";
 
+  // Icon-only styling
+  if (iconOnly) {
+    return (
+      <button
+        onClick={toggle}
+        aria-label={`Switch to ${isDark ? "light" : "dark"} mode`}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: "36px",
+          height: "36px",
+          padding: 0,
+          borderRadius: "50%",
+          background: "transparent",
+          color: "var(--color-text)",
+          cursor: "pointer",
+          border: "none",
+          transition: "background 0.2s, transform 0.15s",
+          flexShrink: 0,
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = "var(--color-text)";
+          e.currentTarget.style.color = "var(--color-bg)";
+          e.currentTarget.style.transform = "scale(1.05)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = "transparent";
+          e.currentTarget.style.color = "var(--color-text)";
+          e.currentTarget.style.transform = "scale(1)";
+        }}>
+        {isDark ? <SunIcon /> : <MoonIcon />}
+      </button>
+    );
+  }
+
+  // Default: icon + text styling
   return (
     <button
       onClick={toggle}
@@ -66,13 +104,14 @@ export default function ThemeToggle() {
 function SunIcon() {
   return (
     <svg
-      width="12"
-      height="12"
+      width="14"
+      height="14"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth="2.2"
-      strokeLinecap="round">
+      strokeLinecap="round"
+      strokeLinejoin="round">
       <circle cx="12" cy="12" r="4" />
       <line x1="12" y1="2" x2="12" y2="5" />
       <line x1="12" y1="19" x2="12" y2="22" />
@@ -89,8 +128,8 @@ function SunIcon() {
 function MoonIcon() {
   return (
     <svg
-      width="12"
-      height="12"
+      width="14"
+      height="14"
       viewBox="0 0 24 24"
       fill="currentColor"
       stroke="none">
