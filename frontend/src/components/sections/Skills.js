@@ -16,24 +16,35 @@ const SECTION_SPAN = SECTION_END - SECTION_START;
 const NAV_ITEMS = ["Skills", "Tools", "Projects", "Location"];
 
 // 4 pages spread evenly across local progress [0.0 → 1.0]
-// Each slide animates in over a 0.12-wide window, spaced 0.25 apart
 const SLIDE_THRESHOLDS = [
-  [0.0, 0.12], // page 0 — Skills
-  [0.25, 0.37], // page 1 — Tools
-  [0.5, 0.62], // page 2 — Location
-  [0.75, 0.87], // page 3 — Projects
+  [0.0, 0.12],
+  [0.25, 0.37],
+  [0.5, 0.62],
+  [0.75, 0.87],
 ];
 
 const ACTIVE_AT = [0, ...SLIDE_THRESHOLDS.slice(1).map(([start]) => start)];
+
+// ─── Mobile breakpoint hook ───────────────────────────────────────────────
+function useIsMobile(breakpoint = 768) {
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== "undefined" ? window.innerWidth < breakpoint : false,
+  );
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${breakpoint - 1}px)`);
+    const handler = (e) => setIsMobile(e.matches);
+    mq.addEventListener("change", handler);
+    setIsMobile(mq.matches);
+    return () => mq.removeEventListener("change", handler);
+  }, [breakpoint]);
+  return isMobile;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Page content components
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * SkillsPage - Uses amCharts packed circle visualization
- */
-function SkillsPage({ profile }) {
+function SkillsPage({ profile, isMobile }) {
   const skills = profile?.Skills || [];
 
   const handleSkillClick = (skill) => {
@@ -47,16 +58,16 @@ function SkillsPage({ profile }) {
 
   if (!skills || skills.length === 0) {
     return (
-      <div style={{ ...styles.pageInner, overflow: "hidden" }}>
+      <div style={{ ...getPageInner(isMobile), overflow: "hidden" }}>
         <div style={styles.pageLabel}>01 / Skills</div>
-        <h2 style={styles.pageTitle}>Technical Expertise</h2>
-        <p style={styles.pageSubtitle}>
+        <h2 style={getPageTitle(isMobile)}>Technical Expertise</h2>
+        <p style={getPageSubtitle(isMobile)}>
           Interactive skill visualization — bubble size reflects proficiency
           rating.
         </p>
         <div
           style={{
-            marginTop: "24px",
+            marginTop: isMobile ? "16px" : "24px",
             flex: 1,
             display: "flex",
             alignItems: "center",
@@ -65,7 +76,10 @@ function SkillsPage({ profile }) {
           }}>
           <div style={styles.emptyStateContainer}>
             <div style={styles.emptyStateCircle}>
-              <Sparkles size={32} style={styles.emptyStateIcon} />
+              <Sparkles
+                size={isMobile ? 24 : 32}
+                style={styles.emptyStateIcon}
+              />
             </div>
             <p style={styles.emptyStateText}>No skills added</p>
             <p style={styles.emptyStateSubtext}>
@@ -78,16 +92,16 @@ function SkillsPage({ profile }) {
   }
 
   return (
-    <div style={{ ...styles.pageInner, overflow: "hidden" }}>
+    <div style={{ ...getPageInner(isMobile), overflow: "hidden" }}>
       <div style={styles.pageLabel}>01 / Skills</div>
-      <h2 style={styles.pageTitle}>Technical Expertise</h2>
-      <p style={styles.pageSubtitle}>
+      <h2 style={getPageTitle(isMobile)}>Technical Expertise</h2>
+      <p style={getPageSubtitle(isMobile)}>
         Interactive skill visualization — bubble size reflects proficiency
         rating.
       </p>
       <div
         style={{
-          marginTop: "24px",
+          marginTop: isMobile ? "12px" : "24px",
           flex: 1,
           display: "flex",
           alignItems: "center",
@@ -100,7 +114,7 @@ function SkillsPage({ profile }) {
         <SkillsPackedCircle
           skills={skills}
           containerId="skills-packed-chart"
-          height="380px"
+          height={isMobile ? "220px" : "380px"}
           onSkillClick={handleSkillClick}
           enableInteractions={false}
         />
@@ -109,16 +123,17 @@ function SkillsPage({ profile }) {
         style={{
           display: "flex",
           justifyContent: "center",
-          gap: "20px",
-          marginTop: "16px",
+          gap: isMobile ? "12px" : "20px",
+          marginTop: isMobile ? "10px" : "16px",
           fontSize: "11px",
           color: "var(--color-text-muted, rgba(128,128,128,0.6))",
+          flexWrap: "wrap",
         }}>
         <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           <span
             style={{
-              width: "12px",
-              height: "12px",
+              width: "10px",
+              height: "10px",
               borderRadius: "50%",
               background: "#10b981",
             }}
@@ -128,8 +143,8 @@ function SkillsPage({ profile }) {
         <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           <span
             style={{
-              width: "12px",
-              height: "12px",
+              width: "10px",
+              height: "10px",
               borderRadius: "50%",
               background: "#3b82f6",
             }}
@@ -139,8 +154,8 @@ function SkillsPage({ profile }) {
         <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           <span
             style={{
-              width: "12px",
-              height: "12px",
+              width: "10px",
+              height: "10px",
               borderRadius: "50%",
               background: "#f59e0b",
             }}
@@ -202,7 +217,7 @@ function useWordCloud(words, width, height) {
   return placed;
 }
 
-function ToolsPage({ profile }) {
+function ToolsPage({ profile, isMobile }) {
   const tools = profile?.IndustryTools || [];
   const containerRef = useRef(null);
   const [dims, setDims] = useState({ width: 480, height: 320 });
@@ -228,16 +243,16 @@ function ToolsPage({ profile }) {
 
   if (tools.length === 0) {
     return (
-      <div style={styles.pageInner}>
+      <div style={getPageInner(isMobile)}>
         <div style={styles.pageLabel}>02 / Tools</div>
-        <h2 style={styles.pageTitle}>My Daily Stack</h2>
-        <p style={styles.pageSubtitle}>
+        <h2 style={getPageTitle(isMobile)}>My Daily Stack</h2>
+        <p style={getPageSubtitle(isMobile)}>
           The tools I reach for every day — chosen for speed, clarity, and
           craft.
         </p>
         <div
           style={{
-            marginTop: "24px",
+            marginTop: isMobile ? "16px" : "24px",
             flex: 1,
             display: "flex",
             alignItems: "center",
@@ -245,7 +260,10 @@ function ToolsPage({ profile }) {
           }}>
           <div style={styles.emptyStateContainer}>
             <div style={styles.emptyStateCircle}>
-              <Terminal size={28} style={styles.emptyStateIcon} />
+              <Terminal
+                size={isMobile ? 22 : 28}
+                style={styles.emptyStateIcon}
+              />
             </div>
             <p style={styles.emptyStateText}>No tools added</p>
             <p style={styles.emptyStateSubtext}>
@@ -258,10 +276,10 @@ function ToolsPage({ profile }) {
   }
 
   return (
-    <div style={{ ...styles.pageInner, overflow: "hidden" }}>
+    <div style={{ ...getPageInner(isMobile), overflow: "hidden" }}>
       <div style={styles.pageLabel}>02 / Tools</div>
-      <h2 style={styles.pageTitle}>My Daily Stack</h2>
-      <p style={styles.pageSubtitle}>
+      <h2 style={getPageTitle(isMobile)}>My Daily Stack</h2>
+      <p style={getPageSubtitle(isMobile)}>
         The tools I reach for every day — chosen for speed, clarity, and craft.
       </p>
 
@@ -269,7 +287,7 @@ function ToolsPage({ profile }) {
         ref={containerRef}
         style={{
           flex: 1,
-          marginTop: "20px",
+          marginTop: isMobile ? "12px" : "20px",
           position: "relative",
           display: "flex",
           alignItems: "center",
@@ -376,7 +394,7 @@ function ToolsPage({ profile }) {
 
 // ─── Projects ─────────────────────────────────────────────────────────────────
 
-function ProjectsPage({ profile }) {
+function ProjectsPage({ profile, isMobile }) {
   const projects = profile?.Projects || [];
   const [currentProject, setCurrentProject] = useState(0);
   const [currentMedia, setCurrentMedia] = useState(0);
@@ -389,7 +407,6 @@ function ProjectsPage({ profile }) {
   const mediaList = project?.Media || [];
   const hasMultiMedia = mediaList.length > 1;
 
-  // Auto-cycle media within a project, then advance project
   useEffect(() => {
     if (!hasProjects) return;
     if (!hasMultiMedia && !isMultiProject) return;
@@ -398,14 +415,12 @@ function ProjectsPage({ profile }) {
       const isLastMedia = currentMedia >= mediaList.length - 1;
 
       if (!isLastMedia) {
-        // Fade to next media in same project
         setFadingMedia(true);
         setTimeout(() => {
           setCurrentMedia((m) => m + 1);
           setFadingMedia(false);
         }, 350);
       } else if (isMultiProject) {
-        // Last media — advance to next project
         setFadingProject(true);
         setTimeout(() => {
           setCurrentProject((p) => (p + 1) % projects.length);
@@ -413,7 +428,6 @@ function ProjectsPage({ profile }) {
           setFadingProject(false);
         }, 400);
       } else {
-        // Single project, loop media
         setFadingMedia(true);
         setTimeout(() => {
           setCurrentMedia(0);
@@ -433,7 +447,6 @@ function ProjectsPage({ profile }) {
     projects.length,
   ]);
 
-  // Reset media index when project changes manually
   const goToProject = (idx) => {
     if (idx === currentProject) return;
     setFadingProject(true);
@@ -444,13 +457,12 @@ function ProjectsPage({ profile }) {
     }, 400);
   };
 
-  // ── Fallback ────────────────────────────────────────────────────────────────
   if (!hasProjects) {
     return (
-      <div style={styles.pageInner}>
+      <div style={getPageInner(isMobile)}>
         <div style={styles.pageLabel}>04 / Projects</div>
-        <h2 style={styles.pageTitle}>Selected Work</h2>
-        <p style={styles.pageSubtitle}>
+        <h2 style={getPageTitle(isMobile)}>Selected Work</h2>
+        <p style={getPageSubtitle(isMobile)}>
           A few things built with care — each one a different kind of problem.
         </p>
         <div
@@ -464,8 +476,8 @@ function ProjectsPage({ profile }) {
           }}>
           <div
             style={{
-              width: "96px",
-              height: "96px",
+              width: isMobile ? "72px" : "96px",
+              height: isMobile ? "72px" : "96px",
               borderRadius: "24px",
               background: "rgba(168,85,247,0.06)",
               border: "1px dashed rgba(168,85,247,0.25)",
@@ -474,8 +486,8 @@ function ProjectsPage({ profile }) {
               justifyContent: "center",
             }}>
             <svg
-              width="38"
-              height="38"
+              width={isMobile ? "28" : "38"}
+              height={isMobile ? "28" : "38"}
               viewBox="0 0 24 24"
               fill="none"
               stroke="rgba(168,85,247,0.5)"
@@ -490,7 +502,7 @@ function ProjectsPage({ profile }) {
           <div style={{ textAlign: "center" }}>
             <p
               style={{
-                fontSize: "15px",
+                fontSize: isMobile ? "13px" : "15px",
                 fontWeight: 600,
                 color: "var(--color-text)",
                 margin: "0 0 6px",
@@ -517,10 +529,9 @@ function ProjectsPage({ profile }) {
   const hasLinks = links.length > 0;
 
   return (
-    <div style={{ ...styles.pageInner, gap: 0 }}>
+    <div style={{ ...getPageInner(isMobile), gap: 0 }}>
       <div style={styles.pageLabel}>04 / Projects</div>
 
-      {/* ── Project info + nav ──────────────────────────────────────── */}
       <div style={{ display: "flex", alignItems: "flex-end", gap: "16px" }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div
@@ -533,7 +544,7 @@ function ProjectsPage({ profile }) {
             }}>
             <h2
               style={{
-                fontSize: "32px",
+                fontSize: isMobile ? "22px" : "32px",
                 fontWeight: 700,
                 color: "var(--color-text)",
                 letterSpacing: "-0.03em",
@@ -546,7 +557,6 @@ function ProjectsPage({ profile }) {
               {project.Name}
             </h2>
 
-            {/* Live / GitHub links */}
             {hasLinks &&
               links.map((link, li) => {
                 const isGithub = link?.url?.includes("github");
@@ -613,7 +623,7 @@ function ProjectsPage({ profile }) {
 
           <p
             style={{
-              fontSize: "14px",
+              fontSize: isMobile ? "12px" : "14px",
               color: "var(--color-text-muted, rgba(255,255,255,0.45))",
               lineHeight: 1.6,
               opacity: fadingProject ? 0 : 1,
@@ -625,7 +635,6 @@ function ProjectsPage({ profile }) {
           </p>
         </div>
 
-        {/* Project dots (only if multiple projects) */}
         {isMultiProject && (
           <div
             style={{
@@ -662,14 +671,13 @@ function ProjectsPage({ profile }) {
 
       <div
         style={{
-          marginTop: "20px",
+          marginTop: isMobile ? "12px" : "20px",
           flex: 1,
           display: "flex",
           flexDirection: "column",
           gap: "16px",
           minHeight: 0,
         }}>
-        {/* ── Media area ─────────────────────────────────────────────── */}
         <div
           style={{
             flex: 1,
@@ -728,7 +736,6 @@ function ProjectsPage({ profile }) {
             </div>
           )}
 
-          {/* bottom gradient overlay */}
           <div
             style={{
               position: "absolute",
@@ -739,7 +746,6 @@ function ProjectsPage({ profile }) {
             }}
           />
 
-          {/* Media dots (bottom-left of image) */}
           {hasMultiMedia && (
             <div
               style={{
@@ -777,7 +783,7 @@ function ProjectsPage({ profile }) {
 
 // ─── Location ─────────────────────────────────────────────────────────────────
 
-function LocationPage({ profile }) {
+function LocationPage({ profile, isMobile }) {
   const address = profile?.Address || {};
   const pin = address.Pin;
   const state = address.State || "";
@@ -805,11 +811,9 @@ function LocationPage({ profile }) {
       .finally(() => setGeoLoading(false));
   }, [pin, country]);
 
-  /* ── Derived display values ────────────────────────────────── */
   const lat = geoData ? parseFloat(geoData.lat) : null;
   const lon = geoData ? parseFloat(geoData.lon) : null;
 
-  // Prefer suburb → city → town → county → state from Nominatim addressdetails
   const addr = geoData?.address || {};
   const cityName =
     addr.suburb || addr.city || addr.town || addr.county || state || "—";
@@ -819,24 +823,18 @@ function LocationPage({ profile }) {
   const lonStr =
     lon != null ? `${Math.abs(lon).toFixed(4)}° ${lon >= 0 ? "E" : "W"}` : "—";
 
-  // google map embedded
   const gmSrc =
     lat != null && lon != null
       ? `https://maps.google.com/maps?q=${lat},${lon}&z=15&output=embed`
       : null;
 
-  // Fallback Google Maps link (opens in new tab)
-  const fullAddress = [street, state, pin, country].filter(Boolean).join(", ");
-  const mapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`;
-
-  /* ── Displayed city title ──────────────────────────────────── */
   const pageTitle = geoLoading ? "Locating…" : `Based in ${cityName}`;
 
   return (
-    <div style={styles.pageInner}>
+    <div style={getPageInner(isMobile)}>
       <div style={styles.pageLabel}>03 / Location</div>
-      <h2 style={styles.pageTitle}>{pageTitle}</h2>
-      <p style={styles.pageSubtitle}>
+      <h2 style={getPageTitle(isMobile)}>{pageTitle}</h2>
+      <p style={getPageSubtitle(isMobile)}>
         {street || state
           ? `${state}${country ? `, ${country}` : ""} — open to remote collaboration across time zones.`
           : "Open to remote collaboration across time zones."}
@@ -844,13 +842,12 @@ function LocationPage({ profile }) {
 
       <div
         style={{
-          marginTop: "28px",
+          marginTop: isMobile ? "16px" : "28px",
           flex: 1,
           display: "flex",
           flexDirection: "column",
-          gap: "14px",
+          gap: isMobile ? "10px" : "14px",
         }}>
-        {/* ── Map card ──────────────────────────────────────────── */}
         <div style={styles.mapCard}>
           {geoLoading && (
             <div
@@ -873,7 +870,6 @@ function LocationPage({ profile }) {
             </div>
           )}
 
-          {/* GM iframe */}
           {gmSrc && (
             <iframe
               src={gmSrc}
@@ -891,60 +887,58 @@ function LocationPage({ profile }) {
             />
           )}
 
-          {/* Fallback grid when no coords yet */}
           {!gmSrc && <div style={styles.mapGrid} />}
 
-          {/* Coordinates */}
           <div style={styles.mapLat}>
             {latStr}, {lonStr}
           </div>
-
-          {/* Open in Google Maps */}
-          {/* <a
-            href={mapsHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              position: "absolute",
-              top: "12px",
-              right: "14px",
-              fontSize: "10px",
-              fontFamily: "monospace",
-              color: "var(--color-text)",
-              letterSpacing: "0.06em",
-              textDecoration: "none",
-              background: "rgba(0,0,0,0.45)",
-              backdropFilter: "blur(6px)",
-              padding: "3px 8px",
-              borderRadius: "6px",
-              border: "1px solid rgba(168,85,247,0.25)",
-            }}>
-            Open ↗
-          </a> */}
         </div>
 
-        {/* ── Info row ──────────────────────────────────────────── */}
-        <div style={{ display: "flex", gap: "12px" }}>
-          <div style={styles.infoCard}>
+        <div style={{ display: "flex", gap: isMobile ? "8px" : "12px" }}>
+          <div
+            style={{ ...styles.infoCard, padding: isMobile ? "12px" : "16px" }}>
             <Clock
-              size={16}
+              size={isMobile ? 14 : 16}
               style={{ color: "#a855f7", marginBottom: "6px" }}
             />
             <div style={styles.infoLabel}>Timezone</div>
-            <div style={styles.infoValue}>IST · UTC+5:30</div>
+            <div
+              style={{
+                ...styles.infoValue,
+                fontSize: isMobile ? "12px" : "14px",
+              }}>
+              IST · UTC+5:30
+            </div>
           </div>
-          <div style={styles.infoCard}>
-            <Wifi size={16} style={{ color: "#a855f7", marginBottom: "6px" }} />
+          <div
+            style={{ ...styles.infoCard, padding: isMobile ? "12px" : "16px" }}>
+            <Wifi
+              size={isMobile ? 14 : 16}
+              style={{ color: "#a855f7", marginBottom: "6px" }}
+            />
             <div style={styles.infoLabel}>Availability</div>
-            <div style={styles.infoValue}>Open to Remote</div>
+            <div
+              style={{
+                ...styles.infoValue,
+                fontSize: isMobile ? "12px" : "14px",
+              }}>
+              Open to Remote
+            </div>
           </div>
-          <div style={styles.infoCard}>
+          <div
+            style={{ ...styles.infoCard, padding: isMobile ? "12px" : "16px" }}>
             <Globe
-              size={16}
+              size={isMobile ? 14 : 16}
               style={{ color: "#a855f7", marginBottom: "6px" }}
             />
             <div style={styles.infoLabel}>Overlap</div>
-            <div style={styles.infoValue}>EU AM · US AM</div>
+            <div
+              style={{
+                ...styles.infoValue,
+                fontSize: isMobile ? "12px" : "14px",
+              }}>
+              EU AM · US AM
+            </div>
           </div>
         </div>
       </div>
@@ -996,33 +990,29 @@ if (
 
 // ─── Page registry (4 pages) ──────────────────────────────────────────────────
 
-const PAGE_COMPONENTS = [
-  SkillsPage, // receives profile
-  ToolsPage, // receives profile
-  ProjectsPage, // static
-  LocationPage, // static
-];
+const PAGE_COMPONENTS = [SkillsPage, ToolsPage, ProjectsPage, LocationPage];
 
 const PAGE_BG = Array(4).fill("var(--color-bg)");
-
-// Pages that need the profile prop
 const PROFILE_PAGE_INDICES = new Set([0, 1, 2, 3]);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Portal content
 // ─────────────────────────────────────────────────────────────────────────────
 function PortalContent({ profile }) {
+  const isMobile = useIsMobile(768);
+
   const wrapperRef = useRef(null);
   const rightPanelRef = useRef(null);
   const leftPanelRef = useRef(null);
+  const bottomNavRef = useRef(null);
   const pageRefs = useRef(PAGE_COMPONENTS.map(() => React.createRef()));
   const navRefs = useRef(NAV_ITEMS.map(() => React.createRef()));
   const activeRef = useRef(0);
 
   useEffect(() => {
-    applyNavStyles(navRefs.current, 0);
+    applyNavStyles(navRefs.current, 0, isMobile);
     applyPageBorders(pageRefs.current, 0, 0);
-  }, []);
+  }, [isMobile]);
 
   useEffect(() => {
     const handleBgScroll = (e) => {
@@ -1040,6 +1030,7 @@ function PortalContent({ profile }) {
       wrapper.style.opacity = 1;
       wrapper.style.visibility = inSection ? "visible" : "hidden";
 
+      // ── Desktop: fade right panel ──
       const rightPanel = rightPanelRef.current;
       if (rightPanel) {
         const rightOpacity =
@@ -1051,6 +1042,14 @@ function PortalContent({ profile }) {
       if (leftPanel) {
         const leftOpacity = lp > 0.9 ? 1 - (lp - 0.9) / 0.1 : 1;
         leftPanel.style.opacity = leftOpacity;
+      }
+
+      // ── Mobile: fade bottom nav ──
+      const bottomNav = bottomNavRef.current;
+      if (bottomNav) {
+        const navOpacity =
+          lp < 0.25 ? lp / 0.25 : lp > 0.9 ? 1 - (lp - 0.9) / 0.1 : 1;
+        bottomNav.style.opacity = navOpacity;
       }
 
       pageRefs.current.forEach((ref, i) => {
@@ -1075,7 +1074,7 @@ function PortalContent({ profile }) {
       applyPageBorders(pageRefs.current, active, lp);
       if (activeRef.current !== active) {
         activeRef.current = active;
-        applyNavStyles(navRefs.current, active);
+        applyNavStyles(navRefs.current, active, isMobile);
       }
 
       pageRefs.current.forEach((ref, i) => {
@@ -1087,8 +1086,165 @@ function PortalContent({ profile }) {
 
     window.addEventListener("bgscroll", handleBgScroll);
     return () => window.removeEventListener("bgscroll", handleBgScroll);
-  }, []);
+  }, [isMobile]);
 
+  // ── MOBILE LAYOUT ──────────────────────────────────────────────────────────
+  if (isMobile) {
+    return (
+      <div
+        ref={wrapperRef}
+        style={{
+          position: "fixed",
+          inset: 0,
+          display: "flex",
+          flexDirection: "column",
+          opacity: 0,
+          visibility: "hidden",
+          zIndex: 998,
+          transition: "opacity 0.3s ease",
+          // 15vh top + 15vh bottom; remaining 70vh split 50/50
+          paddingTop: "15vh",
+          paddingBottom: "15vh",
+          boxSizing: "border-box",
+        }}>
+        {/* ── TOP 50%: stacked content pages ── */}
+        <div
+          ref={leftPanelRef}
+          style={{
+            flex: "0 0 50%",
+            padding: "0 16px 8px",
+            display: "flex",
+            flexDirection: "column",
+            minHeight: 0,
+          }}>
+          <div
+            style={{
+              flex: 1,
+              position: "relative",
+              borderRadius: "18px",
+              overflow: "hidden",
+            }}>
+            {PAGE_COMPONENTS.map((PageComp, i) => (
+              <div
+                key={i}
+                ref={pageRefs.current[i]}
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  pointerEvents: "none",
+                  zIndex: i,
+                  border: "1px solid var(--color-border)",
+                  borderRadius: "inherit",
+                  background: PAGE_BG[i],
+                  willChange: "transform",
+                  transform: "translateY(100%)",
+                  transition:
+                    "transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.35s ease",
+                  overflow: "hidden",
+                }}>
+                <div
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: "10%",
+                    right: "10%",
+                    height: "1px",
+                    background:
+                      "linear-gradient(to right, transparent, rgba(168,85,247,0.5), transparent)",
+                  }}
+                />
+                {PROFILE_PAGE_INDICES.has(i) ? (
+                  <PageComp profile={profile} isMobile={true} />
+                ) : (
+                  <PageComp isMobile={true} />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── BOTTOM 50%: vertical stacked nav — mirrors desktop ── */}
+        <div
+          ref={bottomNavRef}
+          style={{
+            flex: "0 0 50%",
+            padding: "8px 16px 0",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            opacity: 0,
+          }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            {NAV_ITEMS.map((label, i) => (
+              <div
+                key={label}
+                ref={navRefs.current[i]}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "14px",
+                  padding: "12px 16px",
+                  borderRadius: "12px",
+                  border:
+                    i === 0
+                      ? "1px solid var(--color-border)"
+                      : "1px solid var(--color-border-muted)",
+                  background:
+                    i === 0 ? "rgba(168,85,247,0.08)" : "var(--glass-bg)",
+                  transition:
+                    "background 0.35s ease, border-color 0.35s ease, transform 0.35s cubic-bezier(0.22,1,0.36,1)",
+                  transform: i === 0 ? "translateX(4px)" : "translateX(0px)",
+                }}>
+                {/* index */}
+                <span
+                  style={{
+                    fontSize: "11px",
+                    fontWeight: 600,
+                    letterSpacing: "0.08em",
+                    color: i === 0 ? "#a855f7" : "rgba(128,128,128,0.5)",
+                    fontFamily: "monospace",
+                    transition: "color 0.35s ease",
+                    flexShrink: 0,
+                  }}>
+                  0{i + 1}
+                </span>
+                {/* label */}
+                <span
+                  style={{
+                    fontSize: "16px",
+                    fontWeight: 600,
+                    color:
+                      i === 0
+                        ? "var(--color-text)"
+                        : "var(--color-text-muted, rgba(128,128,128,0.6))",
+                    transition: "color 0.35s ease",
+                    letterSpacing: "-0.02em",
+                  }}>
+                  {label}
+                </span>
+                {/* active dot */}
+                <div
+                  style={{
+                    marginLeft: "auto",
+                    width: "6px",
+                    height: "6px",
+                    borderRadius: "50%",
+                    flexShrink: 0,
+                    background: i === 0 ? "#a855f7" : "transparent",
+                    boxShadow:
+                      i === 0 ? "0 0 8px rgba(168,85,247,0.8)" : "none",
+                    transition: "background 0.35s ease, box-shadow 0.35s ease",
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── DESKTOP LAYOUT (UNCHANGED) ─────────────────────────────────────────────
   return (
     <div
       ref={wrapperRef}
@@ -1101,7 +1257,7 @@ function PortalContent({ profile }) {
         zIndex: 998,
         transition: "opacity 0.3s ease",
       }}>
-      {/* ── LEFT: stacked content pages ──────────────────────────────────── */}
+      {/* ── LEFT: stacked content pages ── */}
       <div ref={leftPanelRef} style={styles.leftPanel}>
         <div style={styles.leftFrame}>
           {PAGE_COMPONENTS.map((PageComp, i) => (
@@ -1134,16 +1290,16 @@ function PortalContent({ profile }) {
                 }}
               />
               {PROFILE_PAGE_INDICES.has(i) ? (
-                <PageComp profile={profile} />
+                <PageComp profile={profile} isMobile={false} />
               ) : (
-                <PageComp />
+                <PageComp isMobile={false} />
               )}
             </div>
           ))}
         </div>
       </div>
 
-      {/* ── RIGHT: fixed nav panel ───────────────────────────────────────── */}
+      {/* ── RIGHT: fixed nav panel ── */}
       <div ref={rightPanelRef} style={{ ...styles.rightPanel, opacity: 0 }}>
         <div style={styles.navList}>
           {NAV_ITEMS.map((label, i) => (
@@ -1203,28 +1359,54 @@ function PortalContent({ profile }) {
   );
 }
 
-// ─── Nav + border helpers ──────────────────────────────────────────────────────
+// ─── Nav + border helpers ─────────────────────────────────────────────────────
 
-function applyNavStyles(refs, activeIndex) {
+function applyNavStyles(refs, activeIndex, isMobile) {
   refs.forEach((ref, i) => {
     const el = ref.current;
     if (!el) return;
     const isActive = i === activeIndex;
-    el.style.background = "var(--color-bg)";
+    el.style.background = isActive
+      ? "rgba(168,85,247,0.08)"
+      : "var(--color-bg)";
     el.style.borderColor = isActive
       ? "var(--color-border)"
       : "var(--color-border-muted)";
-    el.style.transform = isActive ? "translateX(4px)" : "translateX(0px)";
-    const [indexSpan, labelSpan, dot] = el.children;
-    if (indexSpan)
-      indexSpan.style.color = isActive ? "#a855f7" : "rgba(128,128,128,0.5)";
-    if (labelSpan)
-      labelSpan.style.color = isActive
-        ? "var(--color-text)"
-        : "var(--color-text-muted, rgba(128,128,128,0.6))";
-    if (dot) {
-      dot.style.background = isActive ? "#a855f7" : "transparent";
-      dot.style.boxShadow = isActive ? "0 0 8px rgba(168,85,247,0.8)" : "none";
+
+    if (!isMobile) {
+      el.style.transform = isActive ? "translateX(4px)" : "translateX(0px)";
+    }
+
+    if (isMobile) {
+      // mobile: column layout — children are [indexSpan, labelSpan, dot]
+      const [indexSpan, labelSpan, dot] = el.children;
+      if (indexSpan)
+        indexSpan.style.color = isActive ? "#a855f7" : "rgba(128,128,128,0.5)";
+      if (labelSpan)
+        labelSpan.style.color = isActive
+          ? "var(--color-text)"
+          : "var(--color-text-muted, rgba(128,128,128,0.6))";
+      if (dot) {
+        dot.style.background = isActive ? "#a855f7" : "transparent";
+        dot.style.boxShadow = isActive
+          ? "0 0 6px rgba(168,85,247,0.8)"
+          : "none";
+      }
+    } else {
+      // desktop: row layout — children are [indexSpan, labelSpan, dot]
+      const [indexSpan, labelSpan, dot] = el.children;
+      if (indexSpan)
+        indexSpan.style.color = isActive ? "#a855f7" : "rgba(128,128,128,0.5)";
+      if (labelSpan)
+        labelSpan.style.color = isActive
+          ? "var(--color-text)"
+          : "var(--color-text-muted, rgba(128,128,128,0.6))";
+      if (dot) {
+        dot.style.background = isActive ? "#a855f7" : "transparent";
+        dot.style.boxShadow = isActive
+          ? "0 0 8px rgba(168,85,247,0.8)"
+          : "none";
+      }
     }
   });
 }
@@ -1268,6 +1450,39 @@ export default function Skills({ profile }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared styles
 // ─────────────────────────────────────────────────────────────────────────────
+
+// ── Responsive helpers (called as functions, not static objects) ──────────────
+function getPageInner(isMobile) {
+  return {
+    padding: isMobile ? "20px 18px 16px" : "36px 40px",
+    height: "100%",
+    display: "flex",
+    flexDirection: "column",
+  };
+}
+
+function getPageTitle(isMobile) {
+  return {
+    fontSize: isMobile ? "22px" : "32px",
+    fontWeight: 700,
+    color: "var(--color-text)",
+    letterSpacing: "-0.03em",
+    lineHeight: 1.15,
+    margin: 0,
+    marginBottom: isMobile ? "6px" : "10px",
+  };
+}
+
+function getPageSubtitle(isMobile) {
+  return {
+    fontSize: isMobile ? "12px" : "14px",
+    color: "var(--color-text-muted, rgba(255,255,255,0.45))",
+    lineHeight: 1.6,
+    margin: 0,
+    maxWidth: "480px",
+  };
+}
+
 const styles = {
   leftPanel: {
     flex: "0 0 62%",
@@ -1301,12 +1516,6 @@ const styles = {
       "background 0.35s ease, border-color 0.35s ease, transform 0.35s cubic-bezier(0.22,1,0.36,1)",
     cursor: "default",
   },
-  pageInner: {
-    padding: "36px 40px",
-    height: "100%",
-    display: "flex",
-    flexDirection: "column",
-  },
   pageLabel: {
     fontSize: "11px",
     fontWeight: 700,
@@ -1315,22 +1524,6 @@ const styles = {
     color: "#7c3aed",
     marginBottom: "10px",
     fontFamily: "monospace",
-  },
-  pageTitle: {
-    fontSize: "32px",
-    fontWeight: 700,
-    color: "var(--color-text)",
-    letterSpacing: "-0.03em",
-    lineHeight: 1.15,
-    margin: 0,
-    marginBottom: "10px",
-  },
-  pageSubtitle: {
-    fontSize: "14px",
-    color: "var(--color-text-muted, rgba(255,255,255,0.45))",
-    lineHeight: 1.6,
-    margin: 0,
-    maxWidth: "480px",
   },
   tag: {
     fontSize: "12px",
@@ -1362,26 +1555,6 @@ const styles = {
       linear-gradient(90deg, rgba(168,85,247,0.06) 1px, transparent 1px)
     `,
     backgroundSize: "32px 32px",
-  },
-  mapPin: {
-    position: "relative",
-    zIndex: 1,
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: "8px",
-    padding: "16px 24px",
-    background: "var(--color-glass)",
-    backdropFilter: "blur(10px)",
-    border: "1px solid rgba(168,85,247,0.5)",
-    borderRadius: "40px",
-    boxShadow: "0 0 30px rgba(168,85,247,0.15)",
-  },
-  mapPinLabel: {
-    fontSize: "14px",
-    fontWeight: 700,
-    color: "var(--color-text)",
-    letterSpacing: "-0.01em",
   },
   mapLat: {
     position: "absolute",
