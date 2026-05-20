@@ -48,7 +48,7 @@ const getPanelStyle = (bp) => ({
   WebkitBackdropFilter: "blur(12px) saturate(160%)",
   border: "1px solid var(--color-border)",
   borderRadius: 16,
-  padding: isMobile(bp) ? "18px 16px 20px" : "26px 28px 28px",
+  padding: isMobile(bp) ? "14px 14px 16px" : "26px 28px 28px",
   boxShadow: "var(--card-shadow)",
   position: "relative",
   overflow: "hidden",
@@ -554,7 +554,7 @@ function ContactContent({ profile, revealProgress }) {
   const gridCols = isSmall ? "1fr" : "1fr 340px";
 
   const titleFontSize = isTiny
-    ? "26px"
+    ? "22px"
     : isSmall
       ? "30px"
       : bp === "laptop"
@@ -564,7 +564,7 @@ function ContactContent({ profile, revealProgress }) {
   const formInnerGrid = isTiny ? "1fr" : "1fr 1fr";
 
   // Tighter textarea on mobile to keep everything in viewport
-  const textareaMinHeight = isTiny ? 80 : isSmall ? 100 : 150;
+  const textareaMinHeight = isTiny ? 62 : isSmall ? 80 : 150;
 
   const computedPanelStyle = getPanelStyle(bp);
 
@@ -706,47 +706,66 @@ function ContactContent({ profile, revealProgress }) {
       <section
         style={{
           color: "#fff",
+
+          /* ── compact responsive spacing ── */
           paddingTop: isTiny
-            ? "72px"
+            ? "56px"
             : isSmall
-              ? "72px"
+              ? "60px"
               : bp === "laptop"
                 ? "64px"
                 : "72px",
+
           paddingRight: isTiny
-            ? "16px"
+            ? "14px"
             : isSmall
-              ? "28px"
+              ? "20px"
               : bp === "laptop"
                 ? "40px"
                 : "60px",
+
           paddingBottom: isTiny
-            ? "24px"
+            ? "14px"
             : isSmall
-              ? "28px"
+              ? "20px"
               : bp === "laptop"
                 ? "96px"
                 : "100px",
+
           paddingLeft: isTiny
-            ? "16px"
+            ? "14px"
             : isSmall
-              ? "28px"
+              ? "20px"
               : bp === "laptop"
                 ? "40px"
                 : "60px",
+
           position: "fixed",
           top: 0,
           left: "50%",
           transform: "translateX(-50%)",
+
           width: "100%",
           maxWidth: 1400,
-          // ── KEY CHANGE: always fixed 100vh, no overflow on mobile ──
-          height: "100vh",
-          overflowY: "hidden",
+
+          /* ── FIX FOR MOBILE TRIMMING ── */
+          minHeight: "100dvh",
+          height: "100dvh",
+
           boxSizing: "border-box",
+
           display: "flex",
           flexDirection: "column",
-          justifyContent: isSmall ? "flex-start" : "center",
+
+          /* desktop centered, mobile stretched */
+          justifyContent: isSmall ? "space-around" : "center",
+
+          /* allow proper scrolling on shorter devices */
+          overflowY: isSmall ? "auto" : "hidden",
+          overflowX: "hidden",
+
+          WebkitOverflowScrolling: "touch",
+
           pointerEvents: "none",
           zIndex: 1000,
         }}>
@@ -754,6 +773,11 @@ function ContactContent({ profile, revealProgress }) {
           style={{
             pointerEvents: revealProgress > 0 ? "auto" : "none",
             width: "100%",
+            /* ── VERTICAL SPACE-AROUND FOR MOBILE: Two main blocks ── */
+            display: isSmall ? "flex" : "block",
+            flexDirection: isSmall ? "column" : undefined,
+            justifyContent: isSmall ? "space-around" : undefined,
+            minHeight: isSmall ? "100%" : undefined,
           }}>
           {/* ── HEADER ── */}
           <div
@@ -768,6 +792,8 @@ function ContactContent({ profile, revealProgress }) {
               transform: `translateY(${(1 - titleReveal) * 28}px)`,
               transition: "opacity 0.06s linear, transform 0.06s linear",
               willChange: "opacity, transform",
+              /* On mobile, let header shrink to fit content within space-around */
+              flexShrink: isSmall ? 0 : undefined,
             }}>
             <div
               onMouseEnter={() => setTitleHovered(true)}
@@ -822,15 +848,22 @@ function ContactContent({ profile, revealProgress }) {
             </div>
           </div>
 
-          {/* ── MAIN GRID ── */}
+          {/* ── MAIN GRID / FLEX CONTAINER ── */}
           <div
             style={{
-              display: "grid",
-              gridTemplateColumns: gridCols,
+              /* On mobile: flex column with space-around for vertical distribution */
+              display: isSmall ? "flex" : "grid",
+              flexDirection: isSmall ? "column" : undefined,
+              justifyContent: isSmall ? "space-around" : undefined,
+              /* On desktop: grid with two columns */
+              gridTemplateColumns: isSmall ? undefined : gridCols,
               gap: isTiny ? 12 : 22,
               position: "relative",
               zIndex: 10,
-              alignItems: "start",
+              alignItems: isSmall ? "stretch" : "start",
+              /* Ensure children can grow/shrink properly for space-around */
+              flex: isSmall ? 1 : undefined,
+              minHeight: isSmall ? 0 : undefined,
             }}>
             {/* ── LEFT: Form ── */}
             <div
@@ -841,6 +874,8 @@ function ContactContent({ profile, revealProgress }) {
                 transform: `translateY(${(1 - formPanelReveal) * 22}px)`,
                 transition: "opacity 0.06s linear, transform 0.06s linear",
                 willChange: "opacity, transform",
+                /* Allow form block to size naturally within space-around */
+                flex: isSmall ? "0 0 auto" : undefined,
               }}>
               <div style={computedPanelStyle}>
                 <PanelShimmer />
@@ -1049,6 +1084,8 @@ function ContactContent({ profile, revealProgress }) {
                   transform: `translateY(${(1 - contactsPanelReveal) * 22}px)`,
                   transition: "opacity 0.06s linear, transform 0.06s linear",
                   willChange: "opacity, transform",
+                  /* Allow contacts block to size naturally within space-around */
+                  flex: isSmall ? "0 0 auto" : undefined,
                 }}>
                 <ContactIconRow
                   contacts={CONTACTS}
