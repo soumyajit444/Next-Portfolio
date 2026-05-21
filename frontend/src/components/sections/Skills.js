@@ -690,36 +690,82 @@ function ProjectsPage({ profile, isMobile }) {
           }}>
           {mediaItem ? (
             mediaItem.resourceType === "video" ? (
-              <video
-                key={`${currentProject}-${currentMedia}`}
-                src={mediaItem.url}
-                autoPlay
-                muted
-                loop={false}
-                playsInline
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                  display: "block",
-                  opacity: fadingMedia || fadingProject ? 0 : 1,
-                  transition: "opacity 0.35s ease",
-                }}
-              />
+              <>
+                <video
+                  key={`bg-${currentProject}-${currentMedia}`}
+                  src={mediaItem.url}
+                  autoPlay
+                  muted
+                  loop={false}
+                  playsInline
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    filter: "blur(16px)",
+                    transform: "scale(1.1)",
+                    opacity: fadingMedia || fadingProject ? 0 : 0.5,
+                    pointerEvents: "none",
+                    transition: "opacity 0.35s ease",
+                  }}
+                />
+                <video
+                  key={`${currentProject}-${currentMedia}`}
+                  src={mediaItem.url}
+                  autoPlay
+                  muted
+                  loop={false}
+                  playsInline
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "contain",
+                    display: "block",
+                    opacity: fadingMedia || fadingProject ? 0 : 1,
+                    transition: "opacity 0.35s ease",
+                    position: "relative",
+                    zIndex: 1,
+                  }}
+                />
+              </>
             ) : (
-              <img
-                key={`${currentProject}-${currentMedia}`}
-                src={mediaItem.url}
-                alt={project.Name}
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                  display: "block",
-                  opacity: fadingMedia || fadingProject ? 0 : 1,
-                  transition: "opacity 0.35s ease",
-                }}
-              />
+              <>
+                <img
+                  key={`bg-${currentProject}-${currentMedia}`}
+                  src={mediaItem.url}
+                  alt=""
+                  aria-hidden="true"
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    filter: "blur(16px)",
+                    transform: "scale(1.1)",
+                    opacity: fadingMedia || fadingProject ? 0 : 0.5,
+                    pointerEvents: "none",
+                    transition: "opacity 0.35s ease",
+                  }}
+                />
+                <img
+                  key={`${currentProject}-${currentMedia}`}
+                  src={mediaItem.url}
+                  alt={project.Name}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "contain",
+                    display: "block",
+                    opacity: fadingMedia || fadingProject ? 0 : 1,
+                    transition: "opacity 0.35s ease",
+                    position: "relative",
+                    zIndex: 1,
+                  }}
+                />
+              </>
             )
           ) : (
             <div
@@ -743,6 +789,7 @@ function ProjectsPage({ profile, isMobile }) {
               background:
                 "linear-gradient(to top, rgba(10,8,18,0.65) 0%, transparent 55%)",
               pointerEvents: "none",
+              zIndex: 2,
             }}
           />
 
