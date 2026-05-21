@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import SoundToggle from "@/components/ui/SoundToggle";
@@ -18,10 +18,35 @@ export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
 
+  //  Refs for debouncing URL updates
+  const urlUpdateTimerRef = useRef(null);
+  const lastUrlHashRef = useRef("");
+
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 40);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const handleSectionChange = (e) => {
+      const { index, id } = e.detail;
+      setActiveIndex(index);
+
+      // Update URL only if hash actually changed
+      if (id && id !== lastUrlHashRef.current && window.history.replaceState) {
+        lastUrlHashRef.current = id;
+        window.history.replaceState(
+          null,
+          "",
+          `${window.location.pathname}#${id}`,
+        );
+      }
+    };
+
+    window.addEventListener("sectionchange", handleSectionChange);
+    return () =>
+      window.removeEventListener("sectionchange", handleSectionChange);
   }, []);
 
   // Close menu when clicking outside
@@ -53,8 +78,10 @@ export default function Header() {
       window.scrollToSection(link.index);
     }
 
+    // Immediate URL update on click (feels responsive)
     if (window.history.replaceState) {
       window.history.replaceState(null, "", `#${link.id}`);
+      lastUrlHashRef.current = link.id;
     }
 
     setMenuOpen(false);

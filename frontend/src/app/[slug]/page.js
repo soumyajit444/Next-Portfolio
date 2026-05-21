@@ -4,7 +4,6 @@ import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import { getProfileDetails } from "@/services/profileService";
 
-// Import your section components
 import Home from "@/components/sections/Home";
 import Profile from "@/components/sections/Profile";
 import Skills from "@/components/sections/Skills";
@@ -12,7 +11,6 @@ import Experience from "@/components/sections/Experience";
 import Contact from "@/components/sections/Contact";
 import LoadingScreen from "@/components/animations/LoadingScreen";
 
-// GSAP imports
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ScrollToPlugin } from "gsap/ScrollToPlugin";
@@ -39,7 +37,11 @@ export default function SlugPage() {
   const [heroScrollProgress, setHeroScrollProgress] = useState(0);
   const [loaded, setLoaded] = useState(false);
 
-  // Fetch profile data on mount
+  // 👇 Refs for stable section detection
+  const lastActiveIndexRef = useRef(-1);
+  const settleTimerRef = useRef(null);
+  const pendingIndexRef = useRef(-1);
+
   useEffect(() => {
     if (!slug) return;
     const fetchData = async () => {
@@ -57,16 +59,16 @@ export default function SlugPage() {
     fetchData();
   }, [slug]);
 
-  // GSAP Horizontal Scroll Logic
   useEffect(() => {
     if (!loaded || !wrapperRef.current) return;
 
     const wrapper = wrapperRef.current;
     const ctx = gsap.context(() => {
       const sectionEls = gsap.utils.toArray(".h-section", wrapper);
+      const sectionCount = sectionEls.length;
 
       const tween = gsap.to(sectionEls, {
-        xPercent: -100 * (sectionEls.length - 1),
+        xPercent: -100 * (sectionCount - 1),
         ease: "none",
         scrollTrigger: {
           trigger: wrapper,
@@ -74,11 +76,40 @@ export default function SlugPage() {
           scrub: 1,
           end: () => `+=${wrapper.offsetWidth}`,
           onUpdate: (self) => {
-            const progress = Math.min(self.progress * sectionEls.length, 1);
+            const progress = Math.min(self.progress, 1);
             setHeroScrollProgress(progress);
             window.dispatchEvent(
               new CustomEvent("bgscroll", { detail: self.progress }),
             );
+
+            // 👇 Calculate index with a 70% threshold (triggers later, feels more accurate)
+            const rawIndex = progress * (sectionCount - 1);
+            const closestIndex = Math.min(
+              Math.floor(rawIndex + 0.7),
+              sectionCount - 1,
+            );
+
+            // 👇 Only process if index changed
+            if (closestIndex !== pendingIndexRef.current) {
+              pendingIndexRef.current = closestIndex;
+              clearTimeout(settleTimerRef.current);
+
+              // Wait for scroll to settle on this section before dispatching
+              settleTimerRef.current = setTimeout(() => {
+                if (pendingIndexRef.current !== lastActiveIndexRef.current) {
+                  lastActiveIndexRef.current = pendingIndexRef.current;
+
+                  window.dispatchEvent(
+                    new CustomEvent("sectionchange", {
+                      detail: {
+                        index: pendingIndexRef.current,
+                        id: sections[pendingIndexRef.current]?.id,
+                      },
+                    }),
+                  );
+                }
+              }, 150); // Adjust: 120-180ms is the sweet spot
+            }
           },
         },
       });
@@ -87,29 +118,41 @@ export default function SlugPage() {
         const st = tween.scrollTrigger;
         if (!st) return;
         const totalScroll = st.end - st.start;
-        const targetProgress = index / (sectionEls.length - 1);
+        const targetProgress = index / (sectionCount - 1);
 
         gsap.to(window, {
-          scrollTo: {
-            y: st.start + totalScroll * targetProgress,
-          },
+          scrollTo: { y: st.start + totalScroll * targetProgress },
           duration: 1,
           ease: "power2.inOut",
         });
       };
 
-      return () => tween.kill();
+      return () => {
+        tween.kill();
+        clearTimeout(settleTimerRef.current);
+      };
     }, wrapper);
 
     return () => ctx.revert();
   }, [loaded]);
 
-  if (loading) {
+  // Handle initial hash on page load
+  useEffect(() => {
+    if (!loaded) return;
+
+    const hash = window.location.hash.replace("#", "");
+    const targetSection = sections.find((s) => s.id === hash);
+
+    if (targetSection && typeof window.scrollToSection === "function") {
+      const index = sections.indexOf(targetSection);
+      setTimeout(() => window.scrollToSection(index), 100);
+    }
+  }, [loaded]);
+
+  if (loading)
     return (
       <LoadingScreen onComplete={() => setLoaded(true)} profile={profileData} />
     );
-  }
-
   if (error || !profileData) {
     return (
       <div
@@ -127,23 +170,13 @@ export default function SlugPage() {
   }
 
   return (
-    <div
-      style={{
-        overflowX: "hidden",
-        position: "relative",
-      }}>
+    <div style={{ overflowX: "hidden", position: "relative" }}>
       {!loaded && (
         <LoadingScreen
           onComplete={() => setLoaded(true)}
           profile={profileData}
         />
       )}
-
-      {/* 
-        REMOVED: visibility and opacity toggles here. 
-        The background is now handled by the root div or CSS variables, 
-        so it stays black/dark while the loader fades out.
-      */}
       <div
         ref={wrapperRef}
         style={{
@@ -151,7 +184,6 @@ export default function SlugPage() {
           flexWrap: "nowrap",
           width: `${sections.length * 100}vw`,
           height: "100vh",
-          // No visibility:hidden here anymore
         }}>
         {sections.map(({ Component, id }, i) => (
           <div
