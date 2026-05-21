@@ -32,6 +32,7 @@ export default function ThemeToggle({ iconOnly = false }) {
     return (
       <button
         onClick={toggle}
+        title=""
         aria-label={`Switch to ${isDark ? "light" : "dark"} mode`}
         className="theme-toggle-mobile"
         style={{

@@ -425,7 +425,7 @@ function ContactIconRow({ contacts, revealProgress }) {
                     bottom: "calc(100% + 10px)",
                     left: "50%",
                     transform: "translateX(-50%)",
-                    background: "rgba(20,10,40,0.96)",
+                    background: "var(--color-bg)",
                     border: `1px solid ${VIOLET}55`,
                     borderRadius: 10,
                     padding: "8px 14px",
@@ -445,7 +445,7 @@ function ContactIconRow({ contacts, revealProgress }) {
                       transform: "translateX(-50%) rotate(45deg)",
                       width: 10,
                       height: 10,
-                      background: "rgba(20,10,40,0.96)",
+                      background: "var(--color-bg)",
                       border: `1px solid ${VIOLET}55`,
                       borderTop: "none",
                       borderLeft: "none",
@@ -454,9 +454,9 @@ function ContactIconRow({ contacts, revealProgress }) {
                   />
                   <span
                     style={{
-                      fontSize: 8,
+                      fontSize: 10,
                       letterSpacing: "0.18em",
-                      color: VIOLET_LT,
+                      color: "var(--color-text-muted)",
                       display: "block",
                       marginBottom: 3,
                     }}>
