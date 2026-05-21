@@ -54,8 +54,6 @@ export default function LoadingScreen({ onComplete, profile }) {
   const firstName = profile?.FirstName || "Soumyajit";
   const lastName = profile?.LastName || "Sengupta";
   const fullName = `${firstName} ${lastName}`.toUpperCase();
-
-  // Get Pass Out Year from Education array
   const passOutYear = profile?.Education?.[0]?.PassOutYear || "2022";
 
   useEffect(() => {
@@ -63,7 +61,7 @@ export default function LoadingScreen({ onComplete, profile }) {
   }, []);
 
   useEffect(() => {
-    const DURATION = 3000; // 3 seconds load time
+    const DURATION = 3000;
     const ease = (t) =>
       t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
@@ -103,6 +101,26 @@ export default function LoadingScreen({ onComplete, profile }) {
           from { opacity:0; transform:translateY(4px); }
           to   { opacity:1; transform:translateY(0); }
         }
+
+        /* Responsive adjustments */
+        @media (max-width: 640px) {
+          .responsive-orb { width: 90vw !important; height: 90vw !important; max-width: 400px; max-height: 400px; }
+          .counter-text { font-size: 64px !important; }
+          .percent-sign { font-size: 16px !important; }
+          .brand-name { font-size: 24px !important; }
+          .phase-label { font-size: 9px !important; letter-spacing: 0.25em !important; }
+          .tagline-text { font-size: 10px !important; }
+          .phase-dots { gap: 0.25rem !important; }
+          .phase-dot { width: 4px !important; height: 4px !important; }
+        }
+        
+        @media (max-width: 480px) {
+          .responsive-orb { width: 85vw !important; height: 85vw !important; }
+          .counter-text { font-size: 52px !important; }
+          .brand-name { font-size: 20px !important; right: 2rem !important; top: 1.5rem !important; }
+          .tagline-text { font-size: 9px !important; left: 2rem !important; bottom: 2rem !important; }
+          .phase-dots { right: 2rem !important; bottom: 2rem !important; }
+        }
       `}</style>
 
       {/* Root overlay */}
@@ -124,7 +142,7 @@ export default function LoadingScreen({ onComplete, profile }) {
 
         {/* Brand — top right (Dynamic Progress Fill) */}
         <div
-          className="absolute right-11 top-9 leading-none"
+          className="absolute right-11 top-9 leading-none brand-name"
           style={{
             zIndex: 10,
           }}>
@@ -134,23 +152,24 @@ export default function LoadingScreen({ onComplete, profile }) {
               fontSize: 32,
               letterSpacing: "0.04em",
               margin: 0,
-
-              /* THE MAGIC: Text Fill Animation */
               color: "transparent",
               backgroundImage: `linear-gradient(90deg, #ffffff ${progress}%, rgba(255,255,255,0.1) ${progress}%)`,
               WebkitBackgroundClip: "text",
               backgroundClip: "text",
-
-              /* Smooth transition for the fill edge */
               transition: "background-image 0.1s linear",
             }}>
             {fullName}
           </h1>
         </div>
 
-        {/* SVG orb */}
+        {/* SVG orb - Responsive Container */}
         <div className="relative flex flex-col items-center">
-          <svg width="400" height="400" viewBox="0 0 400 400">
+          <svg
+            className="responsive-orb"
+            width="400"
+            height="400"
+            viewBox="0 0 400 400"
+            style={{ width: "min(400px, 90vw)", height: "min(400px, 90vw)" }}>
             <defs>
               <linearGradient
                 id="arcGrad"
@@ -267,10 +286,10 @@ export default function LoadingScreen({ onComplete, profile }) {
           </svg>
 
           {/* Counter + phase label — centred over SVG */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
             <div>
               <span
-                className="select-none text-white"
+                className="select-none text-white counter-text"
                 style={{
                   fontFamily: "'Bebas Neue', sans-serif",
                   fontSize: 88,
@@ -281,7 +300,7 @@ export default function LoadingScreen({ onComplete, profile }) {
                 {progress}
               </span>
               <span
-                className="ml-[3px] align-super font-light text-white/60"
+                className="ml-[3px] align-super font-light text-white/60 percent-sign"
                 style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 20 }}>
                 %
               </span>
@@ -289,7 +308,7 @@ export default function LoadingScreen({ onComplete, profile }) {
 
             <p
               key={label}
-              className="mt-3.5 uppercase text-white/30"
+              className="mt-3.5 uppercase text-white/30 phase-label"
               style={{
                 fontSize: 10,
                 letterSpacing: "0.3em",
@@ -303,7 +322,7 @@ export default function LoadingScreen({ onComplete, profile }) {
 
         {/* Tagline — bottom left (Dynamic Year) */}
         <p
-          className="absolute bottom-10 left-11 font-light uppercase leading-[1.9] text-white/30"
+          className="absolute bottom-10 left-11 font-light uppercase leading-[1.9] text-white/30 tagline-text"
           style={{ fontSize: 11, letterSpacing: "0.18em" }}>
           Making high-quality
           <br />
@@ -311,13 +330,15 @@ export default function LoadingScreen({ onComplete, profile }) {
         </p>
 
         {/* Phase dots — bottom right */}
-        <div className="absolute bottom-11 right-11 flex items-center gap-1.5">
+        <div className="absolute bottom-11 right-11 flex items-center phase-dots">
           {PHASES.map((phase) => (
             <div
               key={phase}
               title={phase}
-              className="h-[5px] w-[5px] rounded-full transition-colors duration-300"
+              className="rounded-full transition-colors duration-300 phase-dot"
               style={{
+                height: 5,
+                width: 5,
                 background:
                   isMounted && label === phase
                     ? "rgba(255,255,255,0.8)"

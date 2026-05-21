@@ -193,16 +193,35 @@ export default function Header() {
             <ThemeToggle />
           </div>
 
-          {/* ── Mobile row: ThemeToggle (icon) + "Portfolio" dropdown trigger ── */}
+          {/* ── Mobile row: Toggles + "Portfolio" dropdown trigger ── */}
           <div className="mobile-nav-row">
             <div
               style={{
                 marginLeft: "auto",
                 display: "flex",
                 alignItems: "center",
+                gap: "0.5px",
               }}>
+              {/* Icon-only SoundToggle for mobile (left of ThemeToggle) */}
+              <div
+                className="mobile-sound-toggle"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  marginRight: "-8px",
+                }}>
+                <SoundToggle />
+              </div>
+
               {/* Icon-only ThemeToggle for mobile */}
-              <ThemeToggle iconOnly />
+              <div
+                className="mobile-theme-toggle"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                }}>
+                <ThemeToggle iconOnly />
+              </div>
 
               {/* "Portfolio" dropdown trigger */}
               <button
@@ -386,6 +405,7 @@ export default function Header() {
         .header-right         { display: flex !important; }
         .mobile-nav-row       { display: none !important; }
         .mobile-theme-toggle  { display: none !important; }
+        .mobile-sound-toggle  { display: none !important; }
 
         /* ── Mobile (≤600px): shrink nav to pill around "Portfolio" only ── */
         @media (max-width: 600px) {
@@ -397,17 +417,21 @@ export default function Header() {
             align-items: center;
             width: 100%;
           }
-          .mobile-theme-toggle {
+          .mobile-theme-toggle,
+          .mobile-sound-toggle {
             display: flex !important;
             align-items: center;
           }
-          /* Compact ThemeToggle sizing for mobile */
-          .mobile-theme-toggle button {
+          /* Compact toggle sizing for mobile */
+          .mobile-theme-toggle button,
+          .mobile-sound-toggle button {
             width: 32px !important;
             height: 32px !important;
             padding: 0 !important;
+            min-width: 32px !important;
           }
-          .mobile-theme-toggle svg {
+          .mobile-theme-toggle svg,
+          .mobile-sound-toggle svg {
             width: 14px !important;
             height: 14px !important;
           }
