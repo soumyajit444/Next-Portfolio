@@ -1105,13 +1105,14 @@ function PortalContent({ profile }) {
           // 15vh top + 15vh bottom; remaining 70vh split 50/50
           paddingTop: "15vh",
           paddingBottom: "15vh",
+          gap: "1rem",
           boxSizing: "border-box",
         }}>
-        {/* ── TOP 50%: stacked content pages ── */}
+        {/* ── TOP 70%: stacked content pages ── */}
         <div
           ref={leftPanelRef}
           style={{
-            flex: "0 0 50%",
+            flex: "0 0 90%",
             padding: "0 16px 8px",
             display: "flex",
             flexDirection: "column",
@@ -1163,82 +1164,87 @@ function PortalContent({ profile }) {
           </div>
         </div>
 
-        {/* ── BOTTOM 50%: vertical stacked nav — mirrors desktop ── */}
+        {/* ── BOTTOM NAV: 4 compact boxes, full viewport width ── */}
         <div
           ref={bottomNavRef}
           style={{
-            flex: "0 0 50%",
-            padding: "8px 16px 0",
+            width: "100%",
+            maxWidth: "100%",
             display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
+            flexDirection: "row",
+            gap: "12px",
+            padding: "0 8px",
+            boxSizing: "border-box",
             opacity: 0,
           }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            {NAV_ITEMS.map((label, i) => (
-              <div
-                key={label}
-                ref={navRefs.current[i]}
+          {NAV_ITEMS.map((label, i) => (
+            <div
+              key={label}
+              ref={navRefs.current[i]}
+              style={{
+                flex: 1,
+                minWidth: 0,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "3px", // ← Reduced inner gap (number ↔ name)
+                padding: "6px 2px", // ← Reduced box padding (was 10px 2px)
+                borderRadius: "8px",
+                border:
+                  i === 0
+                    ? "1px solid var(--color-border)"
+                    : "1px solid var(--color-border-muted)",
+                background:
+                  i === 0 ? "rgba(168,85,247,0.08)" : "var(--glass-bg)",
+                transition: "all 0.35s ease",
+                boxSizing: "border-box",
+                cursor: "pointer",
+              }}>
+              {/* ── NUMBER ── */}
+              <span
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "14px",
-                  padding: "12px 16px",
-                  borderRadius: "12px",
-                  border:
-                    i === 0
-                      ? "1px solid var(--color-border)"
-                      : "1px solid var(--color-border-muted)",
-                  background:
-                    i === 0 ? "rgba(168,85,247,0.08)" : "var(--glass-bg)",
-                  transition:
-                    "background 0.35s ease, border-color 0.35s ease, transform 0.35s cubic-bezier(0.22,1,0.36,1)",
-                  transform: i === 0 ? "translateX(4px)" : "translateX(0px)",
+                  fontSize: "10px",
+                  fontWeight: 700,
+                  letterSpacing: "0.05em",
+                  color: i === 0 ? "#a855f7" : "rgba(128,128,128,0.4)",
+                  fontFamily: "monospace",
+                  lineHeight: 1,
                 }}>
-                {/* index */}
-                <span
-                  style={{
-                    fontSize: "11px",
-                    fontWeight: 600,
-                    letterSpacing: "0.08em",
-                    color: i === 0 ? "#a855f7" : "rgba(128,128,128,0.5)",
-                    fontFamily: "monospace",
-                    transition: "color 0.35s ease",
-                    flexShrink: 0,
-                  }}>
-                  0{i + 1}
-                </span>
-                {/* label */}
-                <span
-                  style={{
-                    fontSize: "16px",
-                    fontWeight: 600,
-                    color:
-                      i === 0
-                        ? "var(--color-text)"
-                        : "var(--color-text-muted, rgba(128,128,128,0.6))",
-                    transition: "color 0.35s ease",
-                    letterSpacing: "-0.02em",
-                  }}>
-                  {label}
-                </span>
-                {/* active dot */}
-                <div
-                  style={{
-                    marginLeft: "auto",
-                    width: "6px",
-                    height: "6px",
-                    borderRadius: "50%",
-                    flexShrink: 0,
-                    background: i === 0 ? "#a855f7" : "transparent",
-                    boxShadow:
-                      i === 0 ? "0 0 8px rgba(168,85,247,0.8)" : "none",
-                    transition: "background 0.35s ease, box-shadow 0.35s ease",
-                  }}
-                />
-              </div>
-            ))}
-          </div>
+                0{i + 1}
+              </span>
+
+              {/* ── NAME ── */}
+              <span
+                style={{
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  color:
+                    i === 0
+                      ? "var(--color-text)"
+                      : "var(--color-text-muted, rgba(128,128,128,0.6))",
+                  textAlign: "center",
+                  lineHeight: 1.2,
+                  letterSpacing: "-0.01em",
+                  wordBreak: "keep-all",
+                }}>
+                {label}
+              </span>
+
+              {/* ── ACTIVE DOT ── */}
+              <div
+                style={{
+                  width: "3px",
+                  height: "3px",
+                  borderRadius: "50%",
+                  background: i === 0 ? "#a855f7" : "transparent",
+                  boxShadow: i === 0 ? "0 0 6px rgba(168,85,247,0.6)" : "none",
+                  transition: "all 0.35s ease",
+                  marginTop: "2px",
+                }}
+              />
+            </div>
+          ))}
         </div>
       </div>
     );

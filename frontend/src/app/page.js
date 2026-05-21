@@ -1,115 +1,141 @@
 "use client";
 
 import { useRef, useEffect, useState } from "react";
+import Link from "next/link";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Observer } from "gsap/Observer";
-import Home from "@/components/sections/Home";
-import Profile from "@/components/sections/Profile";
-import Skills from "@/components/sections/Skills";
-import Experience from "@/components/sections/Experience";
-import Contact from "@/components/sections/Contact";
 import LoadingScreen from "@/components/animations/LoadingScreen";
-import { ScrollToPlugin } from "gsap/ScrollToPlugin";
 
-gsap.registerPlugin(ScrollToPlugin, ScrollTrigger, Observer);
-
-const sections = [
-  { Component: Home, id: "home" },
-  { Component: Profile, id: "profile" },
-  { Component: Skills, id: "skills" },
-  { Component: Experience, id: "experience" },
-  { Component: Contact, id: "contact" },
-];
+gsap.registerPlugin(ScrollTrigger, Observer);
 
 export default function Page() {
-  const wrapperRef = useRef(null);
-  const [heroScrollProgress, setHeroScrollProgress] = useState(0);
   const [loaded, setLoaded] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // Fade-in animation for fallback content
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
-    if (!loaded) return;
-    const wrapper = wrapperRef.current;
-    if (!wrapper) return;
+    if (!loaded || !mounted) return;
 
     const ctx = gsap.context(() => {
-      const sectionEls = gsap.utils.toArray(".h-section", wrapper);
+      gsap.fromTo(
+        ".fallback-content",
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" },
+      );
+    });
 
-      const tween = gsap.to(sectionEls, {
-        xPercent: -100 * (sectionEls.length - 1),
-        ease: "none",
-        scrollTrigger: {
-          trigger: wrapper,
-          pin: wrapper,
-          scrub: 1,
-
-          end: () => `+=${wrapper.offsetWidth}`,
-          onUpdate: (self) => {
-            const progress = Math.min(self.progress * sectionEls.length, 1);
-            setHeroScrollProgress(progress);
-
-            window.dispatchEvent(
-              new CustomEvent("bgscroll", { detail: self.progress }),
-            );
-          },
-        },
-      });
-
-      window.scrollToSection = (index) => {
-        const st = tween.scrollTrigger;
-        const totalScroll = st.end - st.start;
-        const targetProgress = index / (sectionEls.length - 1);
-
-        gsap.to(window, {
-          scrollTo: {
-            y: st.start + totalScroll * targetProgress,
-          },
-          duration: 1,
-          ease: "power2.inOut",
-        });
-      };
-
-      return () => tween.kill();
-    }, wrapper); // scope context to wrapper
-
-    return () => ctx.revert(); // cleanly removes all GSAP, avoids DOM conflict
-  }, [loaded]);
+    return () => ctx.revert();
+  }, [loaded, mounted]);
 
   return (
-    <div style={{ overflowX: "hidden", position: "relative" }}>
-      {!loaded && (
-        <LoadingScreen onComplete={() => setLoaded(true)} /> // ← ADD
-      )}
-      {/* CONTENT */}
-      <div
-        ref={wrapperRef}
-        style={{
-          display: "flex",
-          flexWrap: "nowrap",
-          width: `${sections.length * 100}vw`,
-          height: "100vh",
-        }}>
-        {sections.map(({ Component, id }, i) => (
+    <div
+      style={{
+        overflow: "hidden",
+        position: "relative",
+        height: "100vh",
+        background: "var(--color-bg, #0a0a0a)",
+      }}>
+      {/* Loading Screen */}
+      {!loaded && <LoadingScreen onComplete={() => setLoaded(true)} />}
+
+      {/* Fallback UI - shown after load */}
+      {loaded && (
+        <div
+          className="fallback-content"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            height: "100vh",
+            padding: "24px",
+            textAlign: "center",
+            color: "var(--color-text, #fff)",
+            fontFamily: "var(--font-primary, system-ui)",
+          }}>
+          {/* Icon */}
           <div
-            key={i}
-            id={id}
-            className="h-section"
             style={{
-              width: "100vw",
-              height: "100vh",
-              flexShrink: 0,
-              overflow: i === 0 ? "visible" : "hidden",
-              position: "relative",
-              zIndex: i === 0 ? 0 : i,
+              width: "64px",
+              height: "64px",
+              borderRadius: "50%",
+              background: "var(--color-accent, #7033fc)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: "24px",
+              opacity: "0.9",
             }}>
-            {i === 0 ? (
-              <Home scrollProgress={heroScrollProgress} />
-            ) : (
-              <Component />
-            )}
+            <svg
+              width="28"
+              height="28"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="white"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round">
+              <path d="M12 2L2 7l10 5 10-5-10-5z" />
+              <path d="M2 17l10 5 10-5" />
+              <path d="M2 12l10 5 10-5" />
+            </svg>
           </div>
-        ))}
-      </div>
+
+          {/* Heading */}
+          <h1
+            style={{
+              fontSize: "clamp(1.5rem, 4vw, 2.25rem)",
+              fontWeight: "700",
+              marginBottom: "12px",
+              letterSpacing: "-0.02em",
+            }}>
+            Profile Not Specified
+          </h1>
+
+          {/* Message */}
+          <p
+            style={{
+              fontSize: "clamp(0.95rem, 2.5vw, 1.1rem)",
+              color: "var(--color-text-muted, #aaa)",
+              maxWidth: "480px",
+              marginBottom: "32px",
+              lineHeight: "1.6",
+            }}>
+            Please enter the profile URL after the current domain to access your
+            desired profile.
+            <br />
+            <span style={{ opacity: 0.7 }}>
+              Example:{" "}
+              <code
+                style={{
+                  background: "rgba(255,255,255,0.1)",
+                  padding: "2px 6px",
+                  borderRadius: "4px",
+                  fontFamily: "monospace",
+                }}>
+                your-domain.netlify.app/your-name
+              </code>
+            </span>
+          </p>
+
+          {/* Optional: Footer hint */}
+          <p
+            style={{
+              position: "absolute",
+              bottom: "24px",
+              fontSize: "0.85rem",
+              color: "var(--color-text-dim, #666)",
+              opacity: "0.7",
+            }}>
+            Built with Next.js
+          </p>
+        </div>
+      )}
     </div>
   );
 }

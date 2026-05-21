@@ -57,3 +57,26 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   opacity: 1;
   background-color: transparent !important;
 }
+
+@media (hover: hover) and (pointer: fine) {
+  .theme-toggle-mobile {
+    transition:
+      background 0.2s,
+      color 0.2s,
+      transform 0.15s;
+  }
+
+  .theme-toggle-mobile:hover {
+    background: var(--color-text);
+    color: var(--color-bg);
+    transform: scale(1.05);
+  }
+}
+
+.theme-toggle-mobile:focus,
+.theme-toggle-mobile:active {
+  background: transparent !important;
+  color: var(--color-text) !important;
+  transform: scale(1) !important;
+  outline: none;
+}

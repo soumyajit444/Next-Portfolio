@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 function SplashCursor({
   SIM_RESOLUTION = 128,
@@ -20,8 +20,20 @@ function SplashCursor({
   COLOR = "#ff0000",
 }) {
   const canvasRef = useRef(null);
+  const [isDesktop, setIsDesktop] = useState(false);
 
   useEffect(() => {
+    // Check if desktop (width > 1024px) - disable on mobile/tablet
+    const checkDesktop = () => setIsDesktop(window.innerWidth > 1024);
+    checkDesktop();
+    window.addEventListener("resize", checkDesktop);
+    return () => window.removeEventListener("resize", checkDesktop);
+  }, []);
+
+  useEffect(() => {
+    // Only initialize WebGL effect on desktop
+    if (!isDesktop) return;
+
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -1241,7 +1253,17 @@ function SplashCursor({
     });
 
     updateFrame();
+
+    // Cleanup on unmount or when switching to mobile
+    return () => {
+      window.removeEventListener("mousedown", () => {});
+      window.removeEventListener("mousemove", () => {});
+      window.removeEventListener("touchstart", () => {});
+      window.removeEventListener("touchmove", () => {});
+      window.removeEventListener("touchend", () => {});
+    };
   }, [
+    isDesktop,
     SIM_RESOLUTION,
     DYE_RESOLUTION,
     CAPTURE_RESOLUTION,
@@ -1259,6 +1281,9 @@ function SplashCursor({
     RAINBOW_MODE,
     COLOR,
   ]);
+
+  // Don't render canvas on mobile/tablet
+  if (!isDesktop) return null;
 
   return (
     <div className="fixed top-0 left-0 z-50 pointer-events-none w-full h-full">

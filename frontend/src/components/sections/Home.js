@@ -15,7 +15,7 @@ const Spline = dynamic(() => import("@splinetool/react-spline"), {
   ),
 });
 
-/* ─── Animation Variants ─── */
+/* ─── Animation Variants (kept for Zone 2/3 only) ─── */
 const containerVariants = {
   hidden: { opacity: 0, y: 30 },
   visible: {
@@ -39,36 +39,91 @@ const itemVariants = {
   },
 };
 
-// Resize re-trigger variants: snap in instantly, no stagger/delay
-const containerVariantsInstant = {
-  hidden: { opacity: 0, y: 0 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.25,
-      ease: "easeOut",
-      staggerChildren: 0,
-      delayChildren: 0,
-    },
-  },
-};
+// ─── FIXED AnimatedCounter Component with Delay Support ───
+function AnimatedCounter({
+  value,
+  suffix = "+",
+  startAnimation = false,
+  duration = 2000,
+  delay = 0,
+}) {
+  const [displayValue, setDisplayValue] = useState(0);
+  const valueRef = useRef(0);
+  const animationRef = useRef(null);
+  const delayTimeoutRef = useRef(null);
 
-const itemVariantsInstant = {
-  hidden: { opacity: 0, y: 0 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.25, ease: "easeOut" },
-  },
-};
+  useEffect(() => {
+    if (!startAnimation || value === 0) {
+      setDisplayValue(0);
+      valueRef.current = 0;
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
+      }
+      if (delayTimeoutRef.current) {
+        clearTimeout(delayTimeoutRef.current);
+        delayTimeoutRef.current = null;
+      }
+      return;
+    }
+
+    delayTimeoutRef.current = setTimeout(() => {
+      let startTime = null;
+      const easeInOutCubic = (t) =>
+        t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+      const animate = (currentTime) => {
+        if (!startTime) startTime = currentTime;
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const easedProgress = easeInOutCubic(progress);
+        const interpolated = easedProgress * value;
+        const roundedValue = Math.round(interpolated);
+
+        if (roundedValue !== valueRef.current) {
+          valueRef.current = roundedValue;
+          setDisplayValue(roundedValue);
+        }
+
+        if (progress < 1) {
+          animationRef.current = requestAnimationFrame(animate);
+        } else {
+          if (valueRef.current !== value) {
+            valueRef.current = value;
+            setDisplayValue(value);
+          }
+        }
+      };
+      animationRef.current = requestAnimationFrame(animate);
+    }, delay);
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
+      }
+      if (delayTimeoutRef.current) {
+        clearTimeout(delayTimeoutRef.current);
+        delayTimeoutRef.current = null;
+      }
+    };
+  }, [value, startAnimation, duration, delay]);
+
+  return (
+    <span
+      style={{ display: "inline-block", fontVariantNumeric: "tabular-nums" }}>
+      {displayValue}
+      {suffix}
+    </span>
+  );
+}
 
 export default function Home({ scrollProgress = 0, profile, isLoaded }) {
   const [mounted, setMounted] = useState(false);
   const [theme, setTheme] = useState("light");
   const [splineError, setSplineError] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [isDownloading, setIsDownloading] = useState(false); // ← Download state
+  const [isDownloading, setIsDownloading] = useState(false);
   const splineContainerRef = useRef(null);
   const [triggerAnimation, setTriggerAnimation] = useState(false);
   const hasAnimatedRef = useRef(false);
@@ -76,7 +131,6 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
   // 1. Handle Theme, Mounting & Responsive
   useEffect(() => {
     setMounted(true);
-
     const getTheme = () =>
       document.documentElement.getAttribute("data-theme") || "light";
     setTheme(getTheme());
@@ -84,11 +138,9 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
     const checkMobile = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile((prev) => {
-        if (prev !== mobile) {
-          if (hasAnimatedRef.current) {
-            setTriggerAnimation(false);
-            requestAnimationFrame(() => setTriggerAnimation(true));
-          }
+        if (prev !== mobile && hasAnimatedRef.current) {
+          setTriggerAnimation(false);
+          requestAnimationFrame(() => setTriggerAnimation(true));
         }
         return mobile;
       });
@@ -137,27 +189,21 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
     }
 
     setIsDownloading(true);
-
     try {
       const response = await fetch(resumeUrl);
       if (!response.ok) throw new Error("Failed to fetch resume");
-
       const blob = await response.blob();
       const blobUrl = window.URL.createObjectURL(blob);
-
       const link = document.createElement("a");
       link.href = blobUrl;
-      // Ensure proper file extension
       const fileExt = fileName.includes(".") ? "" : ".pdf";
       link.download = `${fileName}${fileExt}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-
       window.URL.revokeObjectURL(blobUrl);
     } catch (error) {
       console.error("Download error:", error);
-      // Fallback: open in new tab
       window.open(resumeUrl, "_blank");
       alert(
         "Opening resume in new tab. If download doesn't start, right-click and 'Save As'.",
@@ -167,13 +213,20 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
     }
   };
 
-  if (!mounted) return null;
+  const handleContactClick = (e) => {
+    e.preventDefault();
+    if (typeof window.scrollToSection === "function") {
+      window.scrollToSection(4);
+    }
+    if (window.history.replaceState) {
+      window.history.replaceState(null, "", "#contact");
+    }
+    window.dispatchEvent(
+      new CustomEvent("navChange", { detail: { index: 4 } }),
+    );
+  };
 
-  // Pick animation variants
-  const cVariants = hasAnimatedRef.current
-    ? containerVariantsInstant
-    : containerVariants;
-  const iVariants = hasAnimatedRef.current ? itemVariantsInstant : itemVariants;
+  if (!mounted) return null;
 
   // 4. Prepare Dynamic Data
   const firstName = profile?.FirstName || "Soumyajit";
@@ -182,6 +235,7 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
     profile?.Bio || "Building scalable, high-performance web applications...";
   const yearsExp = profile?.YearsOfExperience || 0;
   const skillsCount = profile?.Skills?.length || 0;
+  const toolsCount = profile?.IndustryTools?.length || 0;
 
   const jobRoles =
     Array.isArray(profile?.JobRoles) && profile.JobRoles.length > 0
@@ -208,7 +262,7 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
     return (
       <section
         style={{
-          width: "100%",
+          width: "115%",
           minHeight: "100%",
           display: "flex",
           flexDirection: "column",
@@ -217,6 +271,12 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
           color: "var(--color-text)",
           fontFamily: "var(--font-primary)",
           overflowX: "hidden",
+          position: "relative",
+          paddingRight: "15%",
+          WebkitMaskImage:
+            "linear-gradient(to right, rgba(0,0,0,1) 84%, rgba(0,0,0,0) 100%)",
+          maskImage:
+            "linear-gradient(to right, rgba(0,0,0,1) 84%, rgba(0,0,0,0) 100%)",
         }}>
         {/* ── TOP: Spline ── */}
         <div
@@ -237,10 +297,6 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
               height: "100%",
               transformOrigin: "center center",
               willChange: "transform, opacity",
-              WebkitMaskImage:
-                "linear-gradient(to bottom, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)",
-              maskImage:
-                "linear-gradient(to bottom, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)",
             }}>
             {!splineError ? (
               <Spline
@@ -292,18 +348,23 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
             textAlign: "center",
             boxSizing: "border-box",
           }}>
-          {/* ── ZONE 1 (TOP): Name + Role ── */}
-          <motion.div
-            variants={cVariants}
-            initial="hidden"
-            animate={triggerAnimation ? "visible" : "hidden"}
+          {/* ── ZONE 1 (TOP): Name + Role [DIRECT ANIMATION - NO VARIANTS] ── */}
+          <div
             style={{
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
               width: "100%",
             }}>
-            <motion.div variants={iVariants} style={{ marginBottom: "0.5rem" }}>
+            {/* Typewriter line */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{
+                opacity: triggerAnimation ? 1 : 0,
+                y: triggerAnimation ? 0 : 20,
+              }}
+              transition={{ delay: 0.05, duration: 0.6, ease: "easeOut" }}
+              style={{ marginBottom: "0.5rem" }}>
               <div
                 style={{
                   display: "flex",
@@ -346,8 +407,14 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
               </div>
             </motion.div>
 
+            {/* First Name */}
             <motion.h1
-              variants={iVariants}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{
+                opacity: triggerAnimation ? 1 : 0,
+                y: triggerAnimation ? 0 : 20,
+              }}
+              transition={{ delay: 0.15, duration: 0.6, ease: "easeOut" }}
               style={{
                 fontSize: "clamp(2.2rem, 10vw, 3rem)",
                 fontWeight: 700,
@@ -359,8 +426,14 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
               {firstName}
             </motion.h1>
 
+            {/* Last Name */}
             <motion.h1
-              variants={iVariants}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{
+                opacity: triggerAnimation ? 1 : 0,
+                y: triggerAnimation ? 0 : 20,
+              }}
+              transition={{ delay: 0.25, duration: 0.6, ease: "easeOut" }}
               style={{
                 fontSize: "clamp(2.2rem, 10vw, 3rem)",
                 fontWeight: 700,
@@ -371,11 +444,11 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
               }}>
               {lastName}
             </motion.h1>
-          </motion.div>
+          </div>
 
           {/* ── ZONE 2 (CENTER): Bio + Marquee ── */}
           <motion.div
-            variants={cVariants}
+            variants={containerVariants}
             initial="hidden"
             animate={triggerAnimation ? "visible" : "hidden"}
             style={{
@@ -387,25 +460,22 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
               justifyContent: "center",
             }}>
             <motion.p
-              variants={iVariants}
+              variants={itemVariants}
               style={{
-                fontSize: "0.875rem",
-                lineHeight: 1.75,
+                fontSize: "0.72rem",
+                lineHeight: 1.45,
+                letterSpacing: "0.01em",
                 color: "var(--color-text-muted)",
-                maxWidth: "90%",
-                marginBottom: "1rem",
+                maxWidth: "94%",
+                marginBottom: "0.75rem",
               }}>
               {bio}
             </motion.p>
-
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: triggerAnimation ? 1 : 0 }}
               transition={{ delay: 0.6, duration: 0.5 }}
-              style={{
-                width: "100%",
-                overflow: "hidden",
-              }}>
+              style={{ width: "100%", overflow: "hidden" }}>
               <Marquee
                 gradient={false}
                 speed={40}
@@ -435,7 +505,6 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
 
           {/* ── ZONE 3 (BOTTOM): Buttons + Stats ── */}
           <div style={{ width: "100%" }}>
-            {/* Buttons */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{
@@ -450,7 +519,6 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
                 justifyContent: "center",
                 flexWrap: "wrap",
               }}>
-              {/* Download Resume Button - MOBILE */}
               <button
                 onClick={handleDownloadResume}
                 disabled={isDownloading}
@@ -490,8 +558,8 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
                   "Download Resume"
                 )}
               </button>
-
               <button
+                onClick={handleContactClick}
                 style={{
                   padding: "11px 24px",
                   background: "transparent",
@@ -507,7 +575,6 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
               </button>
             </motion.div>
 
-            {/* Stats */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: triggerAnimation ? 1 : 0 }}
@@ -518,9 +585,9 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
                 justifyContent: "center",
               }}>
               {[
-                { value: `${yearsExp}+`, label: "Years exp." },
-                { value: `${skillsCount}+`, label: "Skills" },
-                { value: "∞", label: "Cups of coffee" },
+                { value: yearsExp, label: "Years exp." },
+                { value: skillsCount, label: "Skills" },
+                { value: toolsCount, label: "Industry tools" },
               ].map((stat, i, arr) => (
                 <div
                   key={stat.label}
@@ -532,7 +599,12 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
                         fontWeight: 700,
                         marginBottom: "4px",
                       }}>
-                      {stat.value}
+                      <AnimatedCounter
+                        value={stat.value}
+                        startAnimation={triggerAnimation}
+                        duration={2000}
+                        delay={1400}
+                      />
                     </div>
                     <div
                       style={{
@@ -557,6 +629,19 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
             </motion.div>
           </div>
         </div>
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            right: 0,
+            width: "22%",
+            height: "100%",
+            pointerEvents: "none",
+            zIndex: 30,
+            background:
+              "linear-gradient(to right, rgba(0,0,0,0), var(--color-bg))",
+          }}
+        />
       </section>
     );
   }
@@ -588,17 +673,22 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
           zIndex: 10,
           boxSizing: "border-box",
         }}>
-        {/* ── ZONE 1 (TOP): Role typewriter + Name ── */}
-        <motion.div
-          variants={cVariants}
-          initial="hidden"
-          animate={triggerAnimation ? "visible" : "hidden"}
+        {/* ── ZONE 1 (TOP): Role typewriter + Name [DIRECT ANIMATION - NO VARIANTS] ── */}
+        <div
           style={{
             display: "flex",
             flexDirection: "column",
             alignItems: "flex-start",
           }}>
-          <motion.div variants={iVariants} style={{ marginBottom: "1rem" }}>
+          {/* Typewriter line */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{
+              opacity: triggerAnimation ? 1 : 0,
+              y: triggerAnimation ? 0 : 20,
+            }}
+            transition={{ delay: 0.05, duration: 0.6, ease: "easeOut" }}
+            style={{ marginBottom: "1rem" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
               <span
                 style={{
@@ -628,10 +718,16 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
             </div>
           </motion.div>
 
+          {/* First Name */}
           <motion.h1
-            variants={iVariants}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{
+              opacity: triggerAnimation ? 1 : 0,
+              y: triggerAnimation ? 0 : 20,
+            }}
+            transition={{ delay: 0.15, duration: 0.6, ease: "easeOut" }}
             style={{
-              fontSize: "clamp(2.8rem, 5vw, 4.2rem)",
+              fontSize: "clamp(2.2rem, 10vw, 3rem)",
               fontWeight: 700,
               lineHeight: 1.05,
               letterSpacing: "-0.03em",
@@ -641,10 +737,16 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
             {firstName}
           </motion.h1>
 
+          {/* Last Name */}
           <motion.h1
-            variants={iVariants}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{
+              opacity: triggerAnimation ? 1 : 0,
+              y: triggerAnimation ? 0 : 20,
+            }}
+            transition={{ delay: 0.25, duration: 0.6, ease: "easeOut" }}
             style={{
-              fontSize: "clamp(2.8rem, 5vw, 4.2rem)",
+              fontSize: "clamp(2.2rem, 10vw, 3rem)",
               fontWeight: 700,
               lineHeight: 1.05,
               letterSpacing: "-0.03em",
@@ -653,11 +755,11 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
             }}>
             {lastName}
           </motion.h1>
-        </motion.div>
+        </div>
 
         {/* ── ZONE 2 (CENTER): Bio + Marquee ── */}
         <motion.div
-          variants={cVariants}
+          variants={containerVariants}
           initial="hidden"
           animate={triggerAnimation ? "visible" : "hidden"}
           style={{
@@ -667,7 +769,7 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
             gap: "1rem",
           }}>
           <motion.p
-            variants={iVariants}
+            variants={itemVariants}
             style={{
               fontSize: "1rem",
               lineHeight: 1.75,
@@ -675,11 +777,9 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
               maxWidth: "90%",
               marginBottom: "1rem",
               margin: 0,
-              marginBottom: "1rem",
             }}>
             {bio}
           </motion.p>
-
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: triggerAnimation ? 1 : 0 }}
@@ -715,7 +815,6 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
         {/* ── ZONE 3 (BOTTOM): Buttons + Stats ── */}
         <div
           style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-          {/* Buttons */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{
@@ -724,19 +823,16 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
             }}
             transition={{ delay: 0.8, duration: 0.5 }}
             style={{ display: "flex", gap: "12px" }}>
-            {/* Download Resume Button - DESKTOP */}
             <button
               onClick={handleDownloadResume}
               disabled={isDownloading}
               onMouseEnter={(e) => {
-                if (!isDownloading) {
+                if (!isDownloading)
                   e.currentTarget.style.background = "#6d28d9";
-                }
               }}
               onMouseLeave={(e) => {
-                if (!isDownloading) {
+                if (!isDownloading)
                   e.currentTarget.style.background = "var(--color-text)";
-                }
               }}
               style={{
                 padding: "12px 28px",
@@ -774,8 +870,19 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
                 "Download Resume"
               )}
             </button>
-
             <button
+              onClick={handleContactClick}
+              type="button"
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "#6d28d9";
+                e.currentTarget.style.color = "var(--color-bg)";
+                e.currentTarget.style.borderColor = "#6d28d9";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "transparent";
+                e.currentTarget.style.color = "var(--color-text-muted)";
+                e.currentTarget.style.borderColor = "var(--color-border)";
+              }}
               style={{
                 padding: "12px 28px",
                 background: "transparent",
@@ -786,21 +893,21 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
                 border: "0.5px solid var(--color-border)",
                 borderRadius: "2px",
                 cursor: "pointer",
+                transition: "all 0.2s ease",
               }}>
               Contact Me
             </button>
           </motion.div>
 
-          {/* Stats */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: triggerAnimation ? 1 : 0 }}
             transition={{ delay: 1.0, duration: 0.5 }}
             style={{ display: "flex", gap: "2rem" }}>
             {[
-              { value: `${yearsExp}+`, label: "Years exp." },
-              { value: `${skillsCount}+`, label: "Skills" },
-              { value: "∞", label: "Cups of coffee" },
+              { value: yearsExp, label: "Years exp." },
+              { value: skillsCount, label: "Skills" },
+              { value: toolsCount, label: "Industry tools" },
             ].map((stat, i, arr) => (
               <div key={stat.label} style={{ display: "flex", gap: "2rem" }}>
                 <div>
@@ -810,7 +917,12 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
                       fontWeight: 700,
                       marginBottom: "4px",
                     }}>
-                    {stat.value}
+                    <AnimatedCounter
+                      value={stat.value}
+                      startAnimation={triggerAnimation}
+                      duration={2000}
+                      delay={1400}
+                    />
                   </div>
                   <div
                     style={{
@@ -881,7 +993,6 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
             </div>
           )}
         </motion.div>
-
         <div
           style={{
             position: "absolute",

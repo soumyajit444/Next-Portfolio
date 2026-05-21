@@ -14,11 +14,6 @@ const VIOLET_LT = "#c084fc";
 const EASE_SHARP = "cubic-bezier(0.77,0,0.18,1)";
 
 // ── Breakpoint Hook ───────────────────────────────────────────────────────────
-// Returns a string: "mobile" | "tablet" | "laptop" | "desktop"
-// mobile  : < 480px
-// tablet  : 480px – 767px
-// laptop  : 768px – 1023px
-// desktop : >= 1024px
 function useBreakpoint() {
   const getBreakpoint = (w) => {
     if (w < 480) return "mobile";
@@ -46,18 +41,17 @@ function useBreakpoint() {
 const isMobileOrTablet = (bp) => bp === "mobile" || bp === "tablet";
 const isMobile = (bp) => bp === "mobile";
 
-// ── Panel glass style (height responsive) ─────────────────────────────────────
+// ── Panel glass style ─────────────────────────────────────────────────────────
 const getPanelStyle = (bp) => ({
   background: "var(--header-bg)",
   backdropFilter: "blur(12px) saturate(160%)",
   WebkitBackdropFilter: "blur(12px) saturate(160%)",
   border: "1px solid var(--color-border)",
   borderRadius: 16,
-  padding: isMobile(bp) ? "18px 16px 20px" : "26px 28px 28px",
+  padding: isMobile(bp) ? "14px 14px 16px" : "26px 28px 28px",
   boxShadow: "var(--card-shadow)",
   position: "relative",
   overflow: "hidden",
-  // Fixed 400px on desktop/laptop, auto on mobile/tablet so content fits
   height: isMobileOrTablet(bp) ? "auto" : 400,
   zIndex: 10,
 });
@@ -95,13 +89,11 @@ function FieldPanel({ focused, children, style, revealProgress }) {
         overflow: "hidden",
         padding: "13px 16px 11px",
         position: "relative",
-        transition: "background 0.25s ease, border-color 0.25s ease",
+        transition:
+          "opacity 0.06s linear, transform 0.06s linear, background 0.25s ease, border-color 0.25s ease",
         zIndex: 20,
         opacity,
         transform: `translateY(${translateY}px)`,
-        // eslint-disable-next-line react/no-unknown-property
-        transition:
-          "opacity 0.06s linear, transform 0.06s linear, background 0.25s ease, border-color 0.25s ease",
         willChange: "opacity, transform",
         ...style,
       }}>
@@ -196,8 +188,8 @@ const getContactItems = (contactInfo) => [
   },
 ];
 
-// ── Animated Contact Item Component ───────────────────────────────────────────
-function ContactItem({
+// ── Desktop: Animated Contact Item (full row with label + value) ──────────────
+function ContactItemDesktop({
   c,
   idx,
   revealProgress,
@@ -308,6 +300,233 @@ function ContactItem({
   );
 }
 
+// ── Mobile: Icon-only contact row with tap-to-reveal ─────────────────────────
+function ContactIconRow({ contacts, revealProgress }) {
+  const [activeId, setActiveId] = useState(null);
+
+  const rowOpacity = Math.min(1, Math.max(0, (revealProgress - 0.25) / 0.4));
+
+  const handleIconClick = (c) => {
+    if (c.href === "#") return;
+    // Toggle tooltip; if already open, navigate
+    if (activeId === c.id) {
+      // Second tap → navigate
+      if (c.id === "linkedin") {
+        window.open(c.href, "_blank", "noopener,noreferrer");
+      } else {
+        window.location.href = c.href;
+      }
+    } else {
+      setActiveId(c.id);
+    }
+  };
+
+  // Close tooltip when tapping outside
+  useEffect(() => {
+    if (!activeId) return;
+    const close = (e) => {
+      if (!e.target.closest(".contact-icon-btn")) setActiveId(null);
+    };
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, [activeId]);
+
+  return (
+    <div
+      style={{
+        opacity: rowOpacity,
+        transition: "opacity 0.06s linear",
+        willChange: "opacity",
+        background: "var(--header-bg)",
+        backdropFilter: "blur(12px) saturate(160%)",
+        WebkitBackdropFilter: "blur(12px) saturate(160%)",
+        border: "1px solid var(--color-border)",
+        borderRadius: 16,
+        padding: "16px 20px",
+        position: "relative",
+        overflow: "visible",
+        boxShadow: "var(--card-shadow)",
+        zIndex: 10,
+      }}>
+      <PanelShimmer />
+
+      {/* Header row */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 16,
+        }}>
+        <span
+          style={{
+            fontSize: 14,
+            fontWeight: 700,
+            color: "var(--color-text)",
+            letterSpacing: "-0.01em",
+          }}>
+          My Contacts
+        </span>
+        {/* Status dot */}
+        <span
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+          }}>
+          <span
+            style={{
+              width: 7,
+              height: 7,
+              borderRadius: "50%",
+              background: "#4ade80",
+              boxShadow: "0 0 10px #4ade80",
+              animation: "pulse 2.5s ease-in-out infinite",
+              flexShrink: 0,
+              display: "inline-block",
+            }}
+          />
+          <span
+            style={{
+              fontSize: 8,
+              letterSpacing: "0.12em",
+              color: "var(--color-text-muted)",
+            }}>
+            OPEN TO WORK
+          </span>
+        </span>
+      </div>
+
+      {/* Icons row */}
+      <div
+        style={{
+          display: "flex",
+          gap: 12,
+          alignItems: "center",
+          justifyContent: "space-around",
+        }}>
+        {contacts.map((c, idx) => {
+          const isActive = activeId === c.id;
+          const itemRevealStart = 0.3 + idx * 0.1;
+          const itemOpacity = Math.min(
+            1,
+            Math.max(0, (revealProgress - itemRevealStart) / 0.35),
+          );
+
+          return (
+            <div
+              key={c.id}
+              style={{ position: "relative", flex: 1, textAlign: "center" }}>
+              {/* Tooltip bubble */}
+              {isActive && (
+                <div
+                  style={{
+                    position: "absolute",
+                    bottom: "calc(100% + 10px)",
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    background: "rgba(20,10,40,0.96)",
+                    border: `1px solid ${VIOLET}55`,
+                    borderRadius: 10,
+                    padding: "8px 14px",
+                    minWidth: 160,
+                    maxWidth: 220,
+                    zIndex: 200,
+                    animation: "tooltipIn 0.18s ease",
+                    boxShadow: `0 4px 24px rgba(112,51,252,0.25)`,
+                    pointerEvents: "none",
+                  }}>
+                  {/* Caret */}
+                  <span
+                    style={{
+                      position: "absolute",
+                      bottom: -6,
+                      left: "50%",
+                      transform: "translateX(-50%) rotate(45deg)",
+                      width: 10,
+                      height: 10,
+                      background: "rgba(20,10,40,0.96)",
+                      border: `1px solid ${VIOLET}55`,
+                      borderTop: "none",
+                      borderLeft: "none",
+                      display: "block",
+                    }}
+                  />
+                  <span
+                    style={{
+                      fontSize: 8,
+                      letterSpacing: "0.18em",
+                      color: VIOLET_LT,
+                      display: "block",
+                      marginBottom: 3,
+                    }}>
+                    {c.label}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color: "var(--color-text)",
+                      display: "block",
+                      wordBreak: "break-all",
+                      lineHeight: 1.4,
+                    }}>
+                    {c.value}
+                  </span>
+                </div>
+              )}
+
+              {/* Icon button */}
+              <button
+                type="button"
+                className="contact-icon-btn"
+                onClick={() => handleIconClick(c)}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 52,
+                  height: 52,
+                  borderRadius: 14,
+                  background: isActive
+                    ? `rgba(112,51,252,0.18)`
+                    : "rgba(255,255,255,0.05)",
+                  border: `1px solid ${isActive ? `${VIOLET}88` : "var(--color-border)"}`,
+                  color: isActive ? VIOLET_LT : "var(--color-text)",
+                  cursor: c.href !== "#" ? "pointer" : "not-allowed",
+                  opacity: c.href === "#" ? 0.4 : itemOpacity,
+                  transform: isActive ? "scale(1.08)" : "scale(1)",
+                  transition:
+                    "background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.18s ease, opacity 0.06s linear",
+                  boxShadow: isActive
+                    ? `0 0 16px rgba(112,51,252,0.3)`
+                    : "none",
+                  outline: "none",
+                  willChange: "opacity, transform",
+                }}>
+                {c.icon}
+              </button>
+
+              {/* Label below icon */}
+              <span
+                style={{
+                  display: "block",
+                  fontSize: 8,
+                  letterSpacing: "0.14em",
+                  color: isActive ? VIOLET_LT : "var(--color-text-muted)",
+                  marginTop: 6,
+                  transition: "color 0.2s ease",
+                }}>
+                {c.label}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ── Main Contact Content (rendered inside portal) ─────────────────────────────
 function ContactContent({ profile, revealProgress }) {
   const bp = useBreakpoint();
@@ -329,28 +548,24 @@ function ContactContent({ profile, revealProgress }) {
   const CONTACTS = useMemo(() => getContactItems(contactInfo), [contactInfo]);
 
   // ── Responsive derived values ─────────────────────────────────────────────
-  const isSmall = isMobileOrTablet(bp); // mobile or tablet  → stack
-  const isTiny = isMobile(bp); // mobile only       → tightest spacing
+  const isSmall = isMobileOrTablet(bp);
+  const isTiny = isMobile(bp);
 
-  // Grid layout
   const gridCols = isSmall ? "1fr" : "1fr 340px";
 
-  // Title font size — clamp handled per breakpoint
   const titleFontSize = isTiny
-    ? "28px"
+    ? "22px"
     : isSmall
-      ? "32px"
+      ? "30px"
       : bp === "laptop"
         ? "clamp(28px, 3.5vw, 44px)"
         : "clamp(34px, 4vw, 52px)";
 
-  // Name/phone grid — single column on mobile
   const formInnerGrid = isTiny ? "1fr" : "1fr 1fr";
 
-  // Textarea min-height
-  const textareaMinHeight = isTiny ? 110 : 150;
+  // Tighter textarea on mobile to keep everything in viewport
+  const textareaMinHeight = isTiny ? 62 : isSmall ? 80 : 150;
 
-  // Panel style (height-aware)
   const computedPanelStyle = getPanelStyle(bp);
 
   // Canvas animation
@@ -405,7 +620,6 @@ function ContactContent({ profile, revealProgress }) {
   const handleChange = (e) =>
     setFormState((s) => ({ ...s, [e.target.name]: e.target.value }));
 
-  // ── Handle Send Message with Gmail + mailto fallback ─────────────────────────
   const handleSendMessage = () => {
     const { name, phone, email, message } = formState;
     const recipientEmail = profile?.ContactInfo?.Email;
@@ -446,9 +660,6 @@ function ContactContent({ profile, revealProgress }) {
       }, 1500);
     };
     checkFallback();
-    if (gmailWindow) {
-      gmailWindow.addEventListener("blur", () => {}, { once: true });
-    }
 
     setSent(true);
     setTimeout(() => setSent(false), 3500);
@@ -477,25 +688,14 @@ function ContactContent({ profile, revealProgress }) {
         @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap');
         @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
         @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.8); } }
+        @keyframes tooltipIn { from { opacity: 0; transform: translateX(-50%) translateY(6px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
         .pf-input::placeholder, .pf-textarea::placeholder { color: var(--color-text-muted); font-weight: 400; }
 
-        /* ── Responsive overrides via media queries ─────────────────────── */
-
-        /* Scrollable overflow on small screens so portal content is reachable */
-        @media (max-width: 767px) {
-          .contact-section-inner {
-            overflow-y: auto !important;
-            -webkit-overflow-scrolling: touch;
-          }
-        }
-
-        /* Status badge text: wrap gracefully on tiny screens */
         @media (max-width: 479px) {
           .contact-status-text {
             font-size: 8px !important;
             letter-spacing: 0.08em !important;
           }
-          /* Button text shrink */
           .contact-send-btn {
             padding: 11px 20px !important;
             font-size: 11px !important;
@@ -504,52 +704,68 @@ function ContactContent({ profile, revealProgress }) {
       `}</style>
 
       <section
-        className="contact-section-inner"
         style={{
           color: "#fff",
-          // ── NO shorthand `padding` here — expanded to avoid React conflict ──
-          // Header is fixed ~60-72px tall; add extra clearance on small screens
+
+          /* ── compact responsive spacing ── */
           paddingTop: isTiny
-            ? "88px" // mobile: 88px clears the ~60px header + breathing room
+            ? "56px"
             : isSmall
-              ? "80px" // tablet: same logic
+              ? "60px"
               : bp === "laptop"
-                ? "64px" // laptop
-                : "72px", // desktop (original)
+                ? "64px"
+                : "72px",
+
           paddingRight: isTiny
-            ? "16px"
+            ? "14px"
             : isSmall
-              ? "28px"
+              ? "20px"
               : bp === "laptop"
                 ? "40px"
                 : "60px",
+
           paddingBottom: isTiny
-            ? "80px"
+            ? "14px"
             : isSmall
-              ? "88px"
+              ? "20px"
               : bp === "laptop"
                 ? "96px"
                 : "100px",
+
           paddingLeft: isTiny
-            ? "16px"
+            ? "14px"
             : isSmall
-              ? "28px"
+              ? "20px"
               : bp === "laptop"
                 ? "40px"
                 : "60px",
+
           position: "fixed",
           top: 0,
           left: "50%",
           transform: "translateX(-50%)",
+
           width: "100%",
           maxWidth: 1400,
-          minHeight: "100vh",
-          maxHeight: isSmall ? "100vh" : "unset",
-          overflowY: isSmall ? "auto" : "unset",
+
+          /* ── FIX FOR MOBILE TRIMMING ── */
+          minHeight: "100dvh",
+          height: "100dvh",
+
           boxSizing: "border-box",
+
           display: "flex",
           flexDirection: "column",
-          justifyContent: isSmall ? "flex-start" : "center",
+
+          /* desktop centered, mobile stretched */
+          justifyContent: isSmall ? "space-around" : "center",
+
+          /* allow proper scrolling on shorter devices */
+          overflowY: isSmall ? "auto" : "hidden",
+          overflowX: "hidden",
+
+          WebkitOverflowScrolling: "touch",
+
           pointerEvents: "none",
           zIndex: 1000,
         }}>
@@ -557,13 +773,18 @@ function ContactContent({ profile, revealProgress }) {
           style={{
             pointerEvents: revealProgress > 0 ? "auto" : "none",
             width: "100%",
+            /* ── VERTICAL SPACE-AROUND FOR MOBILE: Two main blocks ── */
+            display: isSmall ? "flex" : "block",
+            flexDirection: isSmall ? "column" : undefined,
+            justifyContent: isSmall ? "space-around" : undefined,
+            minHeight: isSmall ? "100%" : undefined,
           }}>
           {/* ── HEADER ── */}
           <div
             style={{
               position: "relative",
               zIndex: 10,
-              marginBottom: isTiny ? 24 : isSmall ? 32 : 44,
+              marginBottom: isTiny ? 16 : isSmall ? 22 : 44,
               display: "flex",
               alignItems: "flex-end",
               gap: 32,
@@ -571,6 +792,8 @@ function ContactContent({ profile, revealProgress }) {
               transform: `translateY(${(1 - titleReveal) * 28}px)`,
               transition: "opacity 0.06s linear, transform 0.06s linear",
               willChange: "opacity, transform",
+              /* On mobile, let header shrink to fit content within space-around */
+              flexShrink: isSmall ? 0 : undefined,
             }}>
             <div
               onMouseEnter={() => setTitleHovered(true)}
@@ -625,15 +848,22 @@ function ContactContent({ profile, revealProgress }) {
             </div>
           </div>
 
-          {/* ── MAIN GRID ── */}
+          {/* ── MAIN GRID / FLEX CONTAINER ── */}
           <div
             style={{
-              display: "grid",
-              gridTemplateColumns: gridCols,
-              gap: isTiny ? 16 : 22,
+              /* On mobile: flex column with space-around for vertical distribution */
+              display: isSmall ? "flex" : "grid",
+              flexDirection: isSmall ? "column" : undefined,
+              justifyContent: isSmall ? "space-around" : undefined,
+              /* On desktop: grid with two columns */
+              gridTemplateColumns: isSmall ? undefined : gridCols,
+              gap: isTiny ? 12 : 22,
               position: "relative",
               zIndex: 10,
-              alignItems: "start",
+              alignItems: isSmall ? "stretch" : "start",
+              /* Ensure children can grow/shrink properly for space-around */
+              flex: isSmall ? 1 : undefined,
+              minHeight: isSmall ? 0 : undefined,
             }}>
             {/* ── LEFT: Form ── */}
             <div
@@ -644,15 +874,17 @@ function ContactContent({ profile, revealProgress }) {
                 transform: `translateY(${(1 - formPanelReveal) * 22}px)`,
                 transition: "opacity 0.06s linear, transform 0.06s linear",
                 willChange: "opacity, transform",
+                /* Allow form block to size naturally within space-around */
+                flex: isSmall ? "0 0 auto" : undefined,
               }}>
               <div style={computedPanelStyle}>
                 <PanelShimmer />
                 <h3
                   style={{
-                    fontSize: isTiny ? 14 : 16,
+                    fontSize: isTiny ? 13 : 16,
                     fontWeight: 700,
                     color: "var(--color-text)",
-                    margin: "0 0 20px 0",
+                    margin: isTiny ? "0 0 14px 0" : "0 0 20px 0",
                     letterSpacing: "-0.01em",
                     opacity: formPanelReveal,
                     transform: `translateY(${(1 - formPanelReveal) * 12}px)`,
@@ -661,20 +893,21 @@ function ContactContent({ profile, revealProgress }) {
                   }}>
                   Send a Message
                 </h3>
-                {/* Name + Phone row — stacks to 1 col on mobile */}
+
+                {/* Name + Phone row */}
                 <div
                   style={{
                     display: "grid",
                     gridTemplateColumns: formInnerGrid,
-                    gap: 12,
-                    marginBottom: 12,
+                    gap: 10,
+                    marginBottom: 10,
                   }}>
                   <FieldPanel
                     focused={focused === "name"}
                     revealProgress={revealProgress}>
                     <input
                       className="pf-input"
-                      style={inputStyle}
+                      style={{ ...inputStyle, fontSize: isTiny ? 13 : 14 }}
                       name="name"
                       type="text"
                       placeholder="Your Name"
@@ -690,7 +923,7 @@ function ContactContent({ profile, revealProgress }) {
                     revealProgress={revealProgress}>
                     <input
                       className="pf-input"
-                      style={inputStyle}
+                      style={{ ...inputStyle, fontSize: isTiny ? 13 : 14 }}
                       name="phone"
                       type="text"
                       placeholder="Contact Number"
@@ -702,13 +935,14 @@ function ContactContent({ profile, revealProgress }) {
                     />
                   </FieldPanel>
                 </div>
+
                 <FieldPanel
                   focused={focused === "email"}
-                  style={{ marginBottom: 12 }}
+                  style={{ marginBottom: 10 }}
                   revealProgress={revealProgress}>
                   <input
                     className="pf-input"
-                    style={inputStyle}
+                    style={{ ...inputStyle, fontSize: isTiny ? 13 : 14 }}
                     name="email"
                     type="email"
                     placeholder="Email Address"
@@ -719,6 +953,7 @@ function ContactContent({ profile, revealProgress }) {
                     autoComplete="off"
                   />
                 </FieldPanel>
+
                 <FieldPanel
                   focused={focused === "message"}
                   revealProgress={revealProgress}>
@@ -726,6 +961,7 @@ function ContactContent({ profile, revealProgress }) {
                     className="pf-textarea"
                     style={{
                       ...inputStyle,
+                      fontSize: isTiny ? 13 : 14,
                       resize: "none",
                       minHeight: textareaMinHeight,
                       lineHeight: 1.6,
@@ -746,14 +982,14 @@ function ContactContent({ profile, revealProgress }) {
                   display: "flex",
                   alignItems: "center",
                   gap: 20,
-                  marginTop: 18,
+                  marginTop: isTiny ? 12 : 18,
                   position: "relative",
                   zIndex: 10,
                   opacity: submitBtnReveal,
                   transform: `translateY(${(1 - submitBtnReveal) * 12}px)`,
                   transition: "opacity 0.06s linear, transform 0.06s linear",
                   willChange: "opacity, transform",
-                  flexWrap: "wrap", // so "MESSAGE SENT" badge wraps on tiny screens
+                  flexWrap: "wrap",
                 }}>
                 <button
                   type="button"
@@ -836,79 +1072,100 @@ function ContactContent({ profile, revealProgress }) {
               </div>
             </div>
 
-            {/* ── RIGHT: Contacts panel ── */}
-            <div
-              style={{
-                ...computedPanelStyle,
-                // On stacked layout, don't force 400px — auto height already set via getPanelStyle
-                opacity: contactsPanelReveal,
-                transform: `translateY(${(1 - contactsPanelReveal) * 22}px)`,
-                transition: "opacity 0.06s linear, transform 0.06s linear",
-                willChange: "opacity, transform",
-              }}>
-              <PanelShimmer />
-              <span
-                style={{
-                  fontSize: isTiny ? 14 : 16,
-                  fontWeight: 700,
-                  color: "var(--color-text)",
-                  margin: "0 0 20px 0",
-                  letterSpacing: "-0.01em",
-                  display: "block",
-                }}>
-                My Contacts
-              </span>
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                {CONTACTS.map((c, idx) => (
-                  <ContactItem
-                    key={c.id}
-                    c={c}
-                    idx={idx}
-                    revealProgress={revealProgress}
-                    hoveredContact={hoveredContact}
-                    setHoveredContact={setHoveredContact}
-                  />
-                ))}
-              </div>
+            {/* ── RIGHT: Contacts panel ─────────────────────────────────────
+                Desktop/laptop: full list rows (unchanged)
+                Mobile/tablet : compact icon row with tap-to-reveal
+            ────────────────────────────────────────────────────────────── */}
+            {isSmall ? (
+              /* ── MOBILE / TABLET: icon-only row ── */
               <div
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  // On desktop push to bottom of 400px panel; on mobile just margin
-                  marginTop: isSmall ? 24 : 60,
-                  paddingTop: 18,
-                  borderTop: "1px solid rgba(255,255,255,0.08)",
-                  opacity: statusReveal,
-                  transform: `translateY(${(1 - statusReveal) * 8}px)`,
+                  opacity: contactsPanelReveal,
+                  transform: `translateY(${(1 - contactsPanelReveal) * 22}px)`,
+                  transition: "opacity 0.06s linear, transform 0.06s linear",
+                  willChange: "opacity, transform",
+                  /* Allow contacts block to size naturally within space-around */
+                  flex: isSmall ? "0 0 auto" : undefined,
+                }}>
+                <ContactIconRow
+                  contacts={CONTACTS}
+                  revealProgress={revealProgress}
+                />
+              </div>
+            ) : (
+              /* ── DESKTOP / LAPTOP: full list (original) ── */
+              <div
+                style={{
+                  ...computedPanelStyle,
+                  opacity: contactsPanelReveal,
+                  transform: `translateY(${(1 - contactsPanelReveal) * 22}px)`,
                   transition: "opacity 0.06s linear, transform 0.06s linear",
                   willChange: "opacity, transform",
                 }}>
+                <PanelShimmer />
                 <span
                   style={{
-                    width: 7,
-                    height: 7,
-                    borderRadius: "50%",
-                    background: "#4ade80",
-                    boxShadow: "0 0 10px #4ade80",
-                    animation: "pulse 2.5s ease-in-out infinite",
-                    flexShrink: 0,
-                    display: "inline-block",
-                  }}
-                />
-                <span
-                  className="contact-status-text"
-                  style={{
-                    fontSize: 9,
-                    letterSpacing: "0.14em",
-                    color: "var(--color-text-muted)",
+                    fontSize: 16,
+                    fontWeight: 700,
+                    color: "var(--color-text)",
+                    margin: "0 0 20px 0",
+                    letterSpacing: "-0.01em",
+                    display: "block",
                   }}>
-                  OPEN TO WORK · RESPONSE WITHIN 24H
+                  My Contacts
                 </span>
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  {CONTACTS.map((c, idx) => (
+                    <ContactItemDesktop
+                      key={c.id}
+                      c={c}
+                      idx={idx}
+                      revealProgress={revealProgress}
+                      hoveredContact={hoveredContact}
+                      setHoveredContact={setHoveredContact}
+                    />
+                  ))}
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    marginTop: 60,
+                    paddingTop: 18,
+                    borderTop: "1px solid rgba(255,255,255,0.08)",
+                    opacity: statusReveal,
+                    transform: `translateY(${(1 - statusReveal) * 8}px)`,
+                    transition: "opacity 0.06s linear, transform 0.06s linear",
+                    willChange: "opacity, transform",
+                  }}>
+                  <span
+                    style={{
+                      width: 7,
+                      height: 7,
+                      borderRadius: "50%",
+                      background: "#4ade80",
+                      boxShadow: "0 0 10px #4ade80",
+                      animation: "pulse 2.5s ease-in-out infinite",
+                      flexShrink: 0,
+                      display: "inline-block",
+                    }}
+                  />
+                  <span
+                    className="contact-status-text"
+                    style={{
+                      fontSize: 9,
+                      letterSpacing: "0.14em",
+                      color: "var(--color-text-muted)",
+                    }}>
+                    OPEN TO WORK · RESPONSE WITHIN 24H
+                  </span>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
+
         <canvas
           ref={canvasRef}
           style={{
@@ -934,18 +1191,12 @@ export default function ContactSection({ profile }) {
     setMounted(true);
   }, []);
 
-  // ── SYNCED SCROLL LISTENER (Perfect fade-in/fade-out) ─────────────────────
   useEffect(() => {
     const handleBgScroll = (e) => {
       const globalProgress = e.detail;
-
-      // Calculate local progress (0 → 1) within contact section
       let localProgress = (globalProgress - SECTION_START) / SECTION_SPAN;
       localProgress = Math.max(0, Math.min(1, localProgress));
-
-      // Symmetric smoothstep easing: identical curve for both directions
       const easedProgress = localProgress * (3 - 2 * localProgress);
-
       setRevealProgress(easedProgress);
     };
 

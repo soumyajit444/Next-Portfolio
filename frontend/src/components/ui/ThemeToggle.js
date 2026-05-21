@@ -1,4 +1,3 @@
-// components/ui/ThemeToggle.jsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -34,6 +33,7 @@ export default function ThemeToggle({ iconOnly = false }) {
       <button
         onClick={toggle}
         aria-label={`Switch to ${isDark ? "light" : "dark"} mode`}
+        className="theme-toggle-mobile"
         style={{
           display: "flex",
           alignItems: "center",
@@ -46,18 +46,8 @@ export default function ThemeToggle({ iconOnly = false }) {
           color: "var(--color-text)",
           cursor: "pointer",
           border: "none",
-          transition: "background 0.2s, transform 0.15s",
           flexShrink: 0,
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.background = "var(--color-text)";
-          e.currentTarget.style.color = "var(--color-bg)";
-          e.currentTarget.style.transform = "scale(1.05)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.background = "transparent";
-          e.currentTarget.style.color = "var(--color-text)";
-          e.currentTarget.style.transform = "scale(1)";
+          WebkitTapHighlightColor: "transparent",
         }}>
         {isDark ? <SunIcon /> : <MoonIcon />}
       </button>

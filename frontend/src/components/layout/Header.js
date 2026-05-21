@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import SoundToggle from "@/components/ui/SoundToggle";
@@ -18,10 +18,35 @@ export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
 
+  //  Refs for debouncing URL updates
+  const urlUpdateTimerRef = useRef(null);
+  const lastUrlHashRef = useRef("");
+
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 40);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const handleSectionChange = (e) => {
+      const { index, id } = e.detail;
+      setActiveIndex(index);
+
+      // Update URL only if hash actually changed
+      if (id && id !== lastUrlHashRef.current && window.history.replaceState) {
+        lastUrlHashRef.current = id;
+        window.history.replaceState(
+          null,
+          "",
+          `${window.location.pathname}#${id}`,
+        );
+      }
+    };
+
+    window.addEventListener("sectionchange", handleSectionChange);
+    return () =>
+      window.removeEventListener("sectionchange", handleSectionChange);
   }, []);
 
   // Close menu when clicking outside
@@ -53,8 +78,10 @@ export default function Header() {
       window.scrollToSection(link.index);
     }
 
+    // Immediate URL update on click (feels responsive)
     if (window.history.replaceState) {
       window.history.replaceState(null, "", `#${link.id}`);
+      lastUrlHashRef.current = link.id;
     }
 
     setMenuOpen(false);
@@ -74,8 +101,8 @@ export default function Header() {
           justifyContent: "center",
           paddingTop: scrolled ? "10px" : "16px",
           paddingBottom: scrolled ? "10px" : "16px",
-          paddingLeft: "24px",
-          paddingRight: "24px",
+          paddingLeft: scrolled ? "24px" : "clamp(2rem, 5vw, 4rem)",
+          paddingRight: scrolled ? "24px" : "clamp(2rem, 5vw, 4rem)",
           transition: "padding 0.4s ease",
           pointerEvents: "none",
         }}>
@@ -87,11 +114,12 @@ export default function Header() {
             justifyContent: "space-between",
             pointerEvents: "auto",
             width: "100%",
-            maxWidth: scrolled ? 700 : 1440,
+
             paddingTop: "8px",
             paddingBottom: "8px",
-            paddingLeft: "18px",
-            paddingRight: "18px",
+            maxWidth: scrolled ? 700 : "none",
+            paddingLeft: scrolled ? "18px" : 0,
+            paddingRight: scrolled ? "18px" : 0,
             borderRadius: "2rem",
             gap: "24px",
             background: scrolled ? "var(--header-bg)" : "transparent",
@@ -193,16 +221,35 @@ export default function Header() {
             <ThemeToggle />
           </div>
 
-          {/* ── Mobile row: ThemeToggle (icon) + "Portfolio" dropdown trigger ── */}
+          {/* ── Mobile row: Toggles + "Portfolio" dropdown trigger ── */}
           <div className="mobile-nav-row">
             <div
               style={{
                 marginLeft: "auto",
                 display: "flex",
                 alignItems: "center",
+                gap: "0.5px",
               }}>
+              {/* Icon-only SoundToggle for mobile (left of ThemeToggle) */}
+              <div
+                className="mobile-sound-toggle"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  marginRight: "-8px",
+                }}>
+                <SoundToggle />
+              </div>
+
               {/* Icon-only ThemeToggle for mobile */}
-              <ThemeToggle iconOnly />
+              <div
+                className="mobile-theme-toggle"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                }}>
+                <ThemeToggle iconOnly />
+              </div>
 
               {/* "Portfolio" dropdown trigger */}
               <button
@@ -386,6 +433,7 @@ export default function Header() {
         .header-right         { display: flex !important; }
         .mobile-nav-row       { display: none !important; }
         .mobile-theme-toggle  { display: none !important; }
+        .mobile-sound-toggle  { display: none !important; }
 
         /* ── Mobile (≤600px): shrink nav to pill around "Portfolio" only ── */
         @media (max-width: 600px) {
@@ -397,17 +445,21 @@ export default function Header() {
             align-items: center;
             width: 100%;
           }
-          .mobile-theme-toggle {
+          .mobile-theme-toggle,
+          .mobile-sound-toggle {
             display: flex !important;
             align-items: center;
           }
-          /* Compact ThemeToggle sizing for mobile */
-          .mobile-theme-toggle button {
+          /* Compact toggle sizing for mobile */
+          .mobile-theme-toggle button,
+          .mobile-sound-toggle button {
             width: 32px !important;
             height: 32px !important;
             padding: 0 !important;
+            min-width: 32px !important;
           }
-          .mobile-theme-toggle svg {
+          .mobile-theme-toggle svg,
+          .mobile-sound-toggle svg {
             width: 14px !important;
             height: 14px !important;
           }

@@ -4,7 +4,6 @@ import React, { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import { GraduationCap, MapPin } from "lucide-react";
 
-/* ─── viewport reveal hook ─── */
 function useReveal(threshold = 0.1) {
   const ref = useRef(null);
   const inView = useInView(ref, {
@@ -15,7 +14,6 @@ function useReveal(threshold = 0.1) {
   return { ref, inView };
 }
 
-/* ─── MOTION VARIANTS ─── */
 const dropFromTop = (d = 0) => ({
   hidden: { opacity: 0, y: -100, scale: 0.9, filter: "blur(10px)" },
   show: {
@@ -47,7 +45,6 @@ const riseFromBottom = (d = 0) => ({
   },
 });
 
-/* ── glass card ─── */
 function Card({ children, style = {}, variants, animate, className = "" }) {
   return (
     <motion.div
@@ -59,7 +56,6 @@ function Card({ children, style = {}, variants, animate, className = "" }) {
         border: "1px solid rgba(139, 92, 246, 0.1)",
         background: "var(--glass-bg)",
         boxShadow: "0 4px 20px rgba(0,0,0,0.03)",
-        /* Cards are flex-column by default so content fills height */
         display: "flex",
         flexDirection: "column",
         ...style,
@@ -86,7 +82,6 @@ function Card({ children, style = {}, variants, animate, className = "" }) {
   );
 }
 
-/* ─── section label ─── */
 function SectionLabel({ children }) {
   return (
     <div
@@ -119,7 +114,6 @@ function SectionLabel({ children }) {
   );
 }
 
-/* ─── Skill Bar ─── */
 function SkillBar({ label, pct, delay, shouldAnimate }) {
   return (
     <div
@@ -163,9 +157,6 @@ function SkillBar({ label, pct, delay, shouldAnimate }) {
   );
 }
 
-/* ══════════════════════════════════
-   MAIN COMPONENT
-══════════════════════════════════ */
 const Profile = ({ profile }) => {
   const fullName =
     `${profile?.FirstName || ""} ${profile?.LastName || ""}`.trim();
@@ -197,7 +188,6 @@ const Profile = ({ profile }) => {
   return (
     <>
       <style>{`
-        /* ─── Scrollbar styling ─── */
         .custom-scroll::-webkit-scrollbar { width: 4px; }
         .custom-scroll::-webkit-scrollbar-track { background: transparent; }
         .custom-scroll::-webkit-scrollbar-thumb {
@@ -205,9 +195,6 @@ const Profile = ({ profile }) => {
           border-radius: 99px;
         }
 
-        /* ══════════════════════════════
-           WRAPPER
-        ══════════════════════════════ */
         .profile-wrapper {
           width: 100%;
           min-height: 100vh;
@@ -228,9 +215,6 @@ const Profile = ({ profile }) => {
           gap: ${GAP}px;
         }
 
-        /* ══════════════════════════════
-           TOP ROW  — Profile | Bio
-        ══════════════════════════════ */
         .profile-top-row {
           display: grid;
           grid-template-columns: 220px 1fr;
@@ -238,31 +222,23 @@ const Profile = ({ profile }) => {
           align-items: stretch;
         }
 
-        /* Make both top-row children fill the row height */
         .profile-top-row > * {
           height: 100%;
         }
 
-        /* ══════════════════════════════
-           BOTTOM ROW — Hobbies | Skills | Right-col
-        ══════════════════════════════ */
         .profile-bottom-row {
           display: grid;
           grid-template-columns: 1fr 1fr 1fr;
           gap: ${GAP}px;
-          /* CRITICAL: all cells equal height */
           align-items: stretch;
-          /* Fixed row height so hobbies == skills always */
           height: 300px;
         }
 
-        /* Every direct child of the bottom row must fill cell height */
         .profile-bottom-row > * {
           height: 100%;
           min-height: 0;
         }
 
-        /* Right column: flex column, splits edu + location */
         .profile-right-col {
           display: flex;
           flex-direction: column;
@@ -277,13 +253,14 @@ const Profile = ({ profile }) => {
           display: flex;
           flex-direction: column;
         }
+
         .profile-addr-wrap {
-          flex: 0 0 auto;
+          flex: 1;
+          min-height: 0;
           display: flex;
           flex-direction: column;
         }
 
-        /* Cards inside bottom row must fill 100% */
         .profile-hobbies-col,
         .profile-skills-col {
           height: 100%;
@@ -297,14 +274,12 @@ const Profile = ({ profile }) => {
           flex: 1;
         }
 
-        .profile-edu-wrap > * {
+        .profile-edu-wrap > *,
+        .profile-addr-wrap > * {
           height: 100%;
           flex: 1;
         }
 
-        /* ══════════════════════════════
-           TABLET  640 – 1024px
-        ══════════════════════════════ */
         @media (max-width: 1024px) and (min-width: 640px) {
           .profile-wrapper {
             padding: 80px 20px 60px;
@@ -319,92 +294,86 @@ const Profile = ({ profile }) => {
           }
         }
 
-        /* ══════════════════════════════
-           MOBILE  < 640px
-           Stack order:
-           1. Profile card   (full width, fixed height)
-           2. Bio            (full width, fixed height + scroll)
-           3. Hobbies | Skills  (2 cols, fixed height + scroll)
-           4. Education      (full width, fixed height + scroll)
-           5. Location       (full width, auto height)
-        ══════════════════════════════ */
         @media (max-width: 639px) {
           .profile-wrapper {
-            padding: 70px 12px 40px;
+            padding: 52px 8px 20px;
             align-items: flex-start;
+            min-height: 100vh;
           }
 
           .profile-inner {
-            gap: 12px;
+            gap: 6px;
           }
 
-          /* Top row → single column */
           .profile-top-row {
             grid-template-columns: 1fr;
             height: auto;
+            gap: 6px;
           }
 
           .profile-top-row > * {
             height: auto;
           }
 
-          /* Profile card compact */
-          .profile-card-mobile {
-            min-height: 0 !important;
-            padding: 16px !important;
-          }
-
-          /* Bio card fixed height */
-          .profile-bio-card-mobile {
-            height: 110px !important;
-          }
-
-        
           .profile-bottom-row {
+            display: grid;
             grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto auto;
             height: auto;
-            grid-template-rows: 190px auto;
+            gap: 6px;
           }
 
-          .profile-hobbies-col { grid-column: 1; grid-row: 1; height: 190px; }
-          .profile-skills-col  { grid-column: 2; grid-row: 1; height: 190px; }
+          .profile-hobbies-col {
+            grid-column: 1;
+            grid-row: 1;
+            height: 140px;
+          }
 
-          /* Right col: row 2, spans both columns, unconstrained */
+          .profile-skills-col {
+            grid-column: 2;
+            grid-row: 1;
+            height: 140px;
+          }
+
           .profile-right-col {
             grid-column: 1 / -1;
             grid-row: 2;
             height: auto;
-            flex-direction: column;
-            gap: 12px;
+            flex-direction: row;
+            gap: 6px;
           }
 
           .profile-edu-wrap {
-            height: 130px;
-            flex: unset;
+            flex: 1;
+            height: 110px;
+            min-height: unset;
           }
 
           .profile-addr-wrap {
-            height: auto;
-            flex: unset;
+            flex: 1;
+            height: 110px;
+            min-height: unset;
           }
 
-          /* ── Text size reductions ── */
-          .profile-name       { font-size: 15px !important; }
-          .profile-role       { font-size: 10px !important; }
-          .profile-bio-txt    { font-size: 11px !important; line-height: 1.5 !important; }
-          .profile-hobby      { font-size: 10px !important; padding: 6px 9px !important; }
-          .profile-skill-label{ font-size: 9px  !important; }
-          .profile-edu-degree { font-size: 11px !important; }
-          .profile-edu-inst   { font-size: 9px  !important; }
-          .profile-addr-txt   { font-size: 11px !important; }
+          .profile-edu-wrap > *,
+          .profile-addr-wrap > * {
+            height: 100%;
+          }
+
+          .profile-name        { font-size: 13px !important; }
+          .profile-role        { font-size: 9px  !important; }
+          .profile-bio-txt     { font-size: 10px !important; line-height: 1.4 !important; }
+          .profile-hobby       { font-size: 9px  !important; padding: 3px 7px !important; }
+          .profile-skill-label { font-size: 8px  !important; }
+          .profile-edu-degree  { font-size: 10px !important; }
+          .profile-edu-inst    { font-size: 8px  !important; }
+          .profile-addr-txt    { font-size: 9px  !important; line-height: 1.35 !important; }
         }
       `}</style>
 
       <div className="profile-wrapper">
         <div className="profile-inner">
-          {/* ══ TOP ROW: Profile + Bio ══ */}
           <div className="profile-top-row">
-            {/* PROFILE CARD */}
             <div
               ref={profileR.ref}
               style={{ display: "flex", flexDirection: "column" }}>
@@ -435,9 +404,11 @@ const Profile = ({ profile }) => {
                       marginRight: "auto",
                       display: "block",
                     }}
+                    className="profile-avatar"
                   />
                 ) : (
                   <div
+                    className="profile-avatar"
                     style={{
                       width: 72,
                       height: 72,
@@ -483,7 +454,6 @@ const Profile = ({ profile }) => {
               </Card>
             </div>
 
-            {/* BIO CARD */}
             <div
               ref={bioR.ref}
               style={{ display: "flex", flexDirection: "column" }}>
@@ -496,7 +466,6 @@ const Profile = ({ profile }) => {
                 }}
                 className="profile-bio-card-mobile">
                 <SectionLabel>My Bio</SectionLabel>
-                {/* Scrollable bio text */}
                 <div
                   style={{
                     overflowY: "auto",
@@ -520,16 +489,14 @@ const Profile = ({ profile }) => {
             </div>
           </div>
 
-          {/* ══ BOTTOM ROW ══ */}
           <div className="profile-bottom-row">
-            {/* HOBBIES */}
             <div ref={hobbiesR.ref} className="profile-hobbies-col">
               <Card
                 variants={riseFromBottom(0.1)}
                 animate={hobbiesR.inView ? "show" : "hidden"}
-                style={{ padding: "16px" }}>
+                style={{ padding: "16px" }}
+                className="profile-card-pad-mobile">
                 <SectionLabel>Hobbies</SectionLabel>
-                {/* Scrollable list */}
                 <div
                   style={{
                     overflowY: "auto",
@@ -576,14 +543,13 @@ const Profile = ({ profile }) => {
               </Card>
             </div>
 
-            {/* SKILLS */}
             <div ref={skillsR.ref} className="profile-skills-col">
               <Card
                 variants={riseFromBottom(0.2)}
                 animate={skillsR.inView ? "show" : "hidden"}
-                style={{ padding: "16px" }}>
+                style={{ padding: "16px" }}
+                className="profile-card-pad-mobile">
                 <SectionLabel>Technical Skills</SectionLabel>
-                {/* Scrollable skill bars */}
                 <div
                   style={{
                     overflowY: "auto",
@@ -615,16 +581,14 @@ const Profile = ({ profile }) => {
               </Card>
             </div>
 
-            {/* RIGHT COL: Education + Location */}
             <div className="profile-right-col">
-              {/* EDUCATION */}
               <div ref={eduR.ref} className="profile-edu-wrap">
                 <Card
                   variants={riseFromBottom(0.3)}
                   animate={eduR.inView ? "show" : "hidden"}
-                  style={{ padding: "16px", flex: 1 }}>
+                  style={{ padding: "16px", flex: 1 }}
+                  className="profile-card-pad-mobile">
                   <SectionLabel>Education</SectionLabel>
-                  {/* Scrollable education list */}
                   <div
                     style={{
                       overflowY: "auto",
@@ -704,7 +668,6 @@ const Profile = ({ profile }) => {
                 </Card>
               </div>
 
-              {/* LOCATION */}
               <div ref={addrR.ref} className="profile-addr-wrap">
                 <Card
                   variants={riseFromBottom(0.4)}
@@ -713,7 +676,9 @@ const Profile = ({ profile }) => {
                     padding: "14px 16px",
                     flexDirection: "column",
                     justifyContent: "center",
-                  }}>
+                    flex: 1,
+                  }}
+                  className="profile-card-pad-mobile">
                   <SectionLabel>Location</SectionLabel>
                   <div
                     style={{
