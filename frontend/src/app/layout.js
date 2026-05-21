@@ -18,7 +18,10 @@ const workSans = Work_Sans({
 
 export default function RootLayout({ children }) {
   const pathname = usePathname();
-  const isAdminRoute =
+
+  // Hide Header on root path and admin routes
+  const shouldHideHeader =
+    pathname === "/" ||
     pathname?.startsWith("/profile-management") ||
     pathname?.startsWith("/create-profile");
 
@@ -26,7 +29,7 @@ export default function RootLayout({ children }) {
     <html lang="en" className={workSans.variable} data-theme="light">
       <body suppressHydrationWarning>
         <AudioProvider>
-          {!isAdminRoute && <Header />}
+          {!shouldHideHeader && <Header />}
 
           <Background />
 
