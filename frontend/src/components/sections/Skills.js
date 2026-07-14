@@ -4,18 +4,14 @@ import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Terminal, Globe, MapPin, Clock, Wifi, Sparkles } from "lucide-react";
 
-// Import amCharts utility and component
 import SkillsPackedCircle from "@/components/ui/SkillsPackedCircle";
 
-// ─── Section bounds (UNCHANGED) ───────────────────────────────────────────
 const SECTION_START = 0.4;
 const SECTION_END = 0.65;
 const SECTION_SPAN = SECTION_END - SECTION_START;
 
-// ─── Nav labels (4 pages) ─────────────────────────────────────────────────
 const NAV_ITEMS = ["Skills", "Tools", "Projects", "Location"];
 
-// 4 pages spread evenly across local progress [0.0 → 1.0]
 const SLIDE_THRESHOLDS = [
   [0.0, 0.12],
   [0.25, 0.37],
@@ -25,7 +21,15 @@ const SLIDE_THRESHOLDS = [
 
 const ACTIVE_AT = [0, ...SLIDE_THRESHOLDS.slice(1).map(([start]) => start)];
 
-// ─── Mobile breakpoint hook ───────────────────────────────────────────────
+function scrollToTabProgress(targetLocalProgress) {
+  const nudgedProgress = Math.min(1, targetLocalProgress + 0.15);
+  const globalProgress = SECTION_START + nudgedProgress * SECTION_SPAN;
+  const scrollableHeight =
+    document.documentElement.scrollHeight - window.innerHeight;
+  const targetY = globalProgress * scrollableHeight;
+  window.scrollTo({ top: targetY, behavior: "smooth" });
+}
+
 function useIsMobile(breakpoint = 768) {
   const [isMobile, setIsMobile] = useState(
     typeof window !== "undefined" ? window.innerWidth < breakpoint : false,
@@ -39,10 +43,6 @@ function useIsMobile(breakpoint = 768) {
   }, [breakpoint]);
   return isMobile;
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Page content components
-// ─────────────────────────────────────────────────────────────────────────────
 
 function SkillsPage({ profile, isMobile }) {
   const skills = profile?.Skills || [];
@@ -166,8 +166,6 @@ function SkillsPage({ profile, isMobile }) {
     </div>
   );
 }
-
-// ─── Tools Word Cloud ────────────────────────────────────────────────────────
 
 function useWordCloud(words, width, height) {
   const [placed, setPlaced] = useState([]);
@@ -391,8 +389,6 @@ function ToolsPage({ profile, isMobile }) {
     </div>
   );
 }
-
-// ─── Projects ─────────────────────────────────────────────────────────────────
 
 function ProjectsPage({ profile, isMobile }) {
   const projects = profile?.Projects || [];
@@ -828,8 +824,6 @@ function ProjectsPage({ profile, isMobile }) {
   );
 }
 
-// ─── Location ─────────────────────────────────────────────────────────────────
-
 function LocationPage({ profile, isMobile }) {
   const address = profile?.Address || {};
   const pin = address.Pin;
@@ -993,8 +987,6 @@ function LocationPage({ profile, isMobile }) {
   );
 }
 
-// ─── Inject keyframes ─────────────────────────────────────────────────────────
-
 if (
   typeof document !== "undefined" &&
   !document.getElementById("carousel-keyframes")
@@ -1035,16 +1027,11 @@ if (
   document.head.appendChild(s);
 }
 
-// ─── Page registry (4 pages) ──────────────────────────────────────────────────
-
 const PAGE_COMPONENTS = [SkillsPage, ToolsPage, ProjectsPage, LocationPage];
 
 const PAGE_BG = Array(4).fill("var(--color-bg)");
 const PROFILE_PAGE_INDICES = new Set([0, 1, 2, 3]);
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Portal content
-// ─────────────────────────────────────────────────────────────────────────────
 function PortalContent({ profile }) {
   const isMobile = useIsMobile(768);
 
@@ -1055,6 +1042,10 @@ function PortalContent({ profile }) {
   const pageRefs = useRef(PAGE_COMPONENTS.map(() => React.createRef()));
   const navRefs = useRef(NAV_ITEMS.map(() => React.createRef()));
   const activeRef = useRef(0);
+
+  const handleNavClick = (index) => {
+    scrollToTabProgress(ACTIVE_AT[index]);
+  };
 
   useEffect(() => {
     applyNavStyles(navRefs.current, 0, isMobile);
@@ -1077,7 +1068,6 @@ function PortalContent({ profile }) {
       wrapper.style.opacity = 1;
       wrapper.style.visibility = inSection ? "visible" : "hidden";
 
-      // ── Desktop: fade right panel ──
       const rightPanel = rightPanelRef.current;
       if (rightPanel) {
         const rightOpacity =
@@ -1091,7 +1081,6 @@ function PortalContent({ profile }) {
         leftPanel.style.opacity = leftOpacity;
       }
 
-      // ── Mobile: fade bottom nav ──
       const bottomNav = bottomNavRef.current;
       if (bottomNav) {
         const navOpacity =
@@ -1135,7 +1124,6 @@ function PortalContent({ profile }) {
     return () => window.removeEventListener("bgscroll", handleBgScroll);
   }, [isMobile]);
 
-  // ── MOBILE LAYOUT ──────────────────────────────────────────────────────────
   if (isMobile) {
     return (
       <div
@@ -1149,13 +1137,11 @@ function PortalContent({ profile }) {
           visibility: "hidden",
           zIndex: 998,
           transition: "opacity 0.3s ease",
-          // 15vh top + 15vh bottom; remaining 70vh split 50/50
           paddingTop: "15vh",
           paddingBottom: "15vh",
           gap: "1rem",
           boxSizing: "border-box",
         }}>
-        {/* ── TOP 70%: stacked content pages ── */}
         <div
           ref={leftPanelRef}
           style={{
@@ -1211,7 +1197,6 @@ function PortalContent({ profile }) {
           </div>
         </div>
 
-        {/* ── BOTTOM NAV: 4 compact boxes, full viewport width ── */}
         <div
           ref={bottomNavRef}
           style={{
@@ -1228,6 +1213,7 @@ function PortalContent({ profile }) {
             <div
               key={label}
               ref={navRefs.current[i]}
+              onClick={() => handleNavClick(i)}
               style={{
                 flex: 1,
                 minWidth: 0,
@@ -1235,20 +1221,21 @@ function PortalContent({ profile }) {
                 flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
-                gap: "3px", // ← Reduced inner gap (number ↔ name)
-                padding: "6px 2px", // ← Reduced box padding (was 10px 2px)
+                gap: "3px",
+                padding: "6px 2px",
                 borderRadius: "8px",
                 border:
                   i === 0
                     ? "1px solid var(--color-border)"
                     : "1px solid var(--color-border-muted)",
                 background:
-                  i === 0 ? "rgba(168,85,247,0.08)" : "var(--glass-bg)",
+                  i === 0 ? "rgba(168,85,247,0.18)" : "var(--glass-bg)",
+                backdropFilter: "blur(14px)",
+                WebkitBackdropFilter: "blur(14px)",
                 transition: "all 0.35s ease",
                 boxSizing: "border-box",
                 cursor: "pointer",
               }}>
-              {/* ── NUMBER ── */}
               <span
                 style={{
                   fontSize: "10px",
@@ -1261,7 +1248,6 @@ function PortalContent({ profile }) {
                 0{i + 1}
               </span>
 
-              {/* ── NAME ── */}
               <span
                 style={{
                   fontSize: "11px",
@@ -1278,7 +1264,6 @@ function PortalContent({ profile }) {
                 {label}
               </span>
 
-              {/* ── ACTIVE DOT ── */}
               <div
                 style={{
                   width: "3px",
@@ -1297,7 +1282,6 @@ function PortalContent({ profile }) {
     );
   }
 
-  // ── DESKTOP LAYOUT (UNCHANGED) ─────────────────────────────────────────────
   return (
     <div
       ref={wrapperRef}
@@ -1310,7 +1294,6 @@ function PortalContent({ profile }) {
         zIndex: 998,
         transition: "opacity 0.3s ease",
       }}>
-      {/* ── LEFT: stacked content pages ── */}
       <div ref={leftPanelRef} style={styles.leftPanel}>
         <div style={styles.leftFrame}>
           {PAGE_COMPONENTS.map((PageComp, i) => (
@@ -1352,22 +1335,23 @@ function PortalContent({ profile }) {
         </div>
       </div>
 
-      {/* ── RIGHT: fixed nav panel ── */}
       <div ref={rightPanelRef} style={{ ...styles.rightPanel, opacity: 0 }}>
         <div style={styles.navList}>
           {NAV_ITEMS.map((label, i) => (
             <div
               key={label}
               ref={navRefs.current[i]}
+              onClick={() => handleNavClick(i)}
               style={{
                 ...styles.navItem,
+                cursor: "pointer",
                 border:
                   i === 0
                     ? "1px solid var(--color-border)"
                     : "1px solid var(--color-border-muted)",
                 transform: i === 0 ? "translateX(4px)" : "translateX(0px)",
                 background:
-                  i === 0 ? "rgba(168,85,247,0.08)" : "var(--glass-bg)",
+                  i === 0 ? "rgba(168,85,247,0.18)" : "var(--glass-bg)",
               }}>
               <span
                 style={{
@@ -1412,15 +1396,13 @@ function PortalContent({ profile }) {
   );
 }
 
-// ─── Nav + border helpers ─────────────────────────────────────────────────────
-
 function applyNavStyles(refs, activeIndex, isMobile) {
   refs.forEach((ref, i) => {
     const el = ref.current;
     if (!el) return;
     const isActive = i === activeIndex;
     el.style.background = isActive
-      ? "rgba(168,85,247,0.08)"
+      ? "rgba(168,85,247,0.18)"
       : "var(--color-bg)";
     el.style.borderColor = isActive
       ? "var(--color-border)"
@@ -1431,7 +1413,6 @@ function applyNavStyles(refs, activeIndex, isMobile) {
     }
 
     if (isMobile) {
-      // mobile: column layout — children are [indexSpan, labelSpan, dot]
       const [indexSpan, labelSpan, dot] = el.children;
       if (indexSpan)
         indexSpan.style.color = isActive ? "#a855f7" : "rgba(128,128,128,0.5)";
@@ -1446,7 +1427,6 @@ function applyNavStyles(refs, activeIndex, isMobile) {
           : "none";
       }
     } else {
-      // desktop: row layout — children are [indexSpan, labelSpan, dot]
       const [indexSpan, labelSpan, dot] = el.children;
       if (indexSpan)
         indexSpan.style.color = isActive ? "#a855f7" : "rgba(128,128,128,0.5)";
@@ -1483,9 +1463,6 @@ function applyPageBorders(refs, activeIndex, lp) {
   });
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Default export
-// ─────────────────────────────────────────────────────────────────────────────
 export default function Skills({ profile }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -1500,11 +1477,6 @@ export default function Skills({ profile }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Shared styles
-// ─────────────────────────────────────────────────────────────────────────────
-
-// ── Responsive helpers (called as functions, not static objects) ──────────────
 function getPageInner(isMobile) {
   return {
     padding: isMobile ? "20px 18px 16px" : "36px 40px",
@@ -1565,6 +1537,8 @@ const styles = {
     padding: "18px 20px",
     borderRadius: "14px",
     color: "var(--color-text)",
+    backdropFilter: "blur(14px)",
+    WebkitBackdropFilter: "blur(14px)",
     transition:
       "background 0.35s ease, border-color 0.35s ease, transform 0.35s cubic-bezier(0.22,1,0.36,1)",
     cursor: "default",

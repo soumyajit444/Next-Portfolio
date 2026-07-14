@@ -34,45 +34,92 @@ const formatDate = (dateStr) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Helper: Transform API work experience to UI format (STATIC nodeAt for 2 items)
+// Layout constants
+//
+
+// ─────────────────────────────────────────────────────────────────────────────
+const NODE_RANGE_START = 0.13;
+const NODE_RANGE_END = 0.88;
+
+const SLOT_TOP = 0.13;
+const SLOT_BOTTOM = 0.58;
+const SLOT_CENTER = 0.36;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helper: Transform API work experience to UI format
+// Dynamically chunks experiences into top/bottom pairs (or a single centered
+// item), each chunk owning its own scroll-trigger window.
 // ─────────────────────────────────────────────────────────────────────────────
 const transformExperiences = (workExperiences) => {
   if (!workExperiences || workExperiences.length === 0) return [];
 
-  return workExperiences.slice(0, 2).map((exp, index) => {
+  const total = workExperiences.length;
+  const numChunks = Math.ceil(total / 2);
+
+  // Trigger point (along growProgress, 0..1) at which each chunk activates.
+  const chunkThresholds = Array.from({ length: numChunks }, (_, c) => {
+    if (numChunks === 1) return NODE_RANGE_START;
+    return (
+      NODE_RANGE_START +
+      (c / (numChunks - 1)) * (NODE_RANGE_END - NODE_RANGE_START)
+    );
+  });
+
+  return workExperiences.map((exp, index) => {
     const startDate = formatDate(exp.StartDate);
     const endDate = exp.EndDate ? formatDate(exp.EndDate) : "Present";
 
-    const staticNodePositions = [0.13, 0.56];
-    const staticSides = ["right", "left"];
+    const chunkIndex = Math.floor(index / 2);
+    const isLastChunk = chunkIndex === numChunks - 1;
+    const itemsInThisChunk = isLastChunk && total % 2 === 1 ? 1 : 2;
+
+    let slot;
+    let pos;
+    if (itemsInThisChunk === 1) {
+      slot = "center";
+      pos = SLOT_CENTER;
+    } else if (index % 2 === 0) {
+      slot = "top";
+      pos = SLOT_TOP;
+    } else {
+      slot = "bottom";
+      pos = SLOT_BOTTOM;
+    }
+
+    const triggerStart = chunkThresholds[chunkIndex];
+    const triggerEnd =
+      chunkIndex + 1 < numChunks ? chunkThresholds[chunkIndex + 1] : Infinity;
 
     return {
       id: exp._id || index,
-      side: staticSides[index],
+      side: index % 2 === 0 ? "right" : "left",
       date: `${startDate} – ${endDate}`,
       role: exp.Role,
       company: exp.CompanyName,
       location: exp.WorkLocation,
       description: exp.Description,
       tags: exp.KeySkills || [],
-      nodeAt: staticNodePositions[index],
+      slot,
+      pos,
+      triggerStart,
+      triggerEnd,
     };
   });
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// DESKTOP: ProgressLine (UNCHANGED)
+// DESKTOP: ProgressLine
 // ─────────────────────────────────────────────────────────────────────────────
 function ProgressLine({ experiences }) {
   const lineTrackRef = useRef(null);
   const lineFillRef = useRef(null);
 
-  const nodeRefs = useRef([React.createRef(), React.createRef()]);
-  const cardRefs = useRef([React.createRef(), React.createRef()]);
-  const pillRefs = useRef([React.createRef(), React.createRef()]);
+  const nodeRefs = useRef(experiences.map(() => React.createRef()));
+  const cardRefs = useRef(experiences.map(() => React.createRef()));
+  const pillRefs = useRef(experiences.map(() => React.createRef()));
 
-  const cardRevealedRef = useRef([false, false]);
-  const pillRevealedRef = useRef([false, false]);
+  const cardRevealedRef = useRef(experiences.map(() => false));
+  const pillRevealedRef = useRef(experiences.map(() => false));
 
   useEffect(() => {
     const handleBgScroll = (e) => {
@@ -105,14 +152,16 @@ function ProgressLine({ experiences }) {
       lineTrack.style.opacity = opacity;
       lineFill.style.height = `${lineHeight}vh`;
 
-      experiences.slice(0, 2).forEach((exp, i) => {
+      experiences.forEach((exp, i) => {
         const nodeDot = nodeRefs.current[i]?.current;
         const card = cardRefs.current[i]?.current;
         const pill = pillRefs.current[i]?.current;
 
         if (!nodeDot || !card || !pill) return;
 
-        const activated = growProgress >= exp.nodeAt;
+        // Active only while growProgress is inside this item's chunk window.
+        const activated =
+          growProgress >= exp.triggerStart && growProgress < exp.triggerEnd;
         const pillSide = exp.side === "right" ? "left" : "right";
 
         nodeDot.style.opacity = activated ? "1" : "0";
@@ -201,13 +250,13 @@ function ProgressLine({ experiences }) {
         />
       </div>
 
-      {experiences.slice(0, 2).map((exp, i) => (
+      {experiences.map((exp, i) => (
         <React.Fragment key={exp.id}>
           <div
             ref={nodeRefs.current[i]}
             style={{
               position: "absolute",
-              top: `calc(${exp.nodeAt * 100}vh - 6px)`,
+              top: `calc(${exp.pos * 100}vh - 6px)`,
               left: "50%",
               transform: "translateX(-50%) scale(0.4)",
               width: "14px",
@@ -231,7 +280,7 @@ function ProgressLine({ experiences }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// DESKTOP: DatePill (UNCHANGED)
+// DESKTOP: DatePill
 // ─────────────────────────────────────────────────────────────────────────────
 function DatePill({ exp, pillRef }) {
   const pillSide = exp.side === "right" ? "left" : "right";
@@ -245,7 +294,7 @@ function DatePill({ exp, pillRef }) {
       ref={pillRef}
       style={{
         position: "absolute",
-        top: `calc(${exp.nodeAt * 100}vh - 14px)`,
+        top: `calc(${exp.pos * 100}vh - 14px)`,
         ...(pillSide === "left"
           ? { right: "calc(50% + 20px)" }
           : { left: "calc(50% + 20px)" }),
@@ -271,7 +320,7 @@ function DatePill({ exp, pillRef }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// DESKTOP: ExperienceCard (UNCHANGED)
+// DESKTOP: ExperienceCard
 // ─────────────────────────────────────────────────────────────────────────────
 function ExperienceCard({ exp, cardRef }) {
   const isRight = exp.side === "right";
@@ -283,7 +332,7 @@ function ExperienceCard({ exp, cardRef }) {
         position: "absolute",
         display: "flex",
         flexDirection: "column",
-        top: `calc(${exp.nodeAt * 100}vh - 20px)`,
+        top: `calc(${exp.pos * 100}vh - 20px)`,
         ...(isRight
           ? { left: "calc(50% + 28px)" }
           : { right: "calc(50% + 28px)" }),
@@ -393,14 +442,13 @@ function MobileProgressLine({ experiences }) {
   const lineTrackRef = useRef(null);
   const lineFillRef = useRef(null);
 
-  const nodeRefs = useRef([React.createRef(), React.createRef()]);
-  const cardRefs = useRef([React.createRef(), React.createRef()]);
-  const pillRefs = useRef([React.createRef(), React.createRef()]);
+  const nodeRefs = useRef(experiences.map(() => React.createRef()));
+  const cardRefs = useRef(experiences.map(() => React.createRef()));
+  const pillRefs = useRef(experiences.map(() => React.createRef()));
 
-  const cardRevealedRef = useRef([false, false]);
-  const pillRevealedRef = useRef([false, false]);
+  const cardRevealedRef = useRef(experiences.map(() => false));
+  const pillRevealedRef = useRef(experiences.map(() => false));
 
-  // LINE_LEFT: how far from the viewport left edge the timeline sits
   const LINE_LEFT = 24;
 
   useEffect(() => {
@@ -434,22 +482,22 @@ function MobileProgressLine({ experiences }) {
       lineTrack.style.opacity = opacity;
       lineFill.style.height = `${lineHeight}vh`;
 
-      experiences.slice(0, 2).forEach((exp, i) => {
+      experiences.forEach((exp, i) => {
         const nodeDot = nodeRefs.current[i]?.current;
         const card = cardRefs.current[i]?.current;
         const pill = pillRefs.current[i]?.current;
 
         if (!nodeDot || !card || !pill) return;
 
-        const activated = growProgress >= exp.nodeAt;
+        // Active only while growProgress is inside this item's chunk window.
+        const activated =
+          growProgress >= exp.triggerStart && growProgress < exp.triggerEnd;
 
-        // Node dot
         nodeDot.style.opacity = activated ? "1" : "0";
         nodeDot.style.transform = activated
           ? "translateX(-50%) scale(1)"
           : "translateX(-50%) scale(0.4)";
 
-        // Card: always slides in from the right on mobile
         if (activated && !cardRevealedRef.current[i]) {
           cardRevealedRef.current[i] = true;
           card.style.opacity = "1";
@@ -461,7 +509,6 @@ function MobileProgressLine({ experiences }) {
           card.style.transform = "translateY(12px) translateX(16px)";
         }
 
-        // Pill: slides in from the right on mobile
         if (activated && !pillRevealedRef.current[i]) {
           pillRevealedRef.current[i] = true;
           pill.style.opacity = "1";
@@ -485,7 +532,6 @@ function MobileProgressLine({ experiences }) {
       style={{
         position: "fixed",
         top: 0,
-        // Line sits at LINE_LEFT px from the left, centered on the 2px track
         left: `${LINE_LEFT}px`,
         width: "2px",
         height: "100vh",
@@ -498,7 +544,6 @@ function MobileProgressLine({ experiences }) {
         opacity: 0,
         transition: "opacity 0.3s ease",
       }}>
-      {/* ── Growing purple fill ─────────────────────────────────────────── */}
       <div
         ref={lineFillRef}
         style={{
@@ -511,7 +556,6 @@ function MobileProgressLine({ experiences }) {
             "0 0 8px rgba(168, 85, 247, 0.6), 0 0 20px rgba(168, 85, 247, 0.25)",
           position: "relative",
         }}>
-        {/* Glowing tip dot */}
         <div
           style={{
             position: "absolute",
@@ -528,15 +572,13 @@ function MobileProgressLine({ experiences }) {
         />
       </div>
 
-      {/* ── Mobile nodes + pills + cards ────────────────────────────────── */}
-      {experiences.slice(0, 2).map((exp, i) => (
+      {experiences.map((exp, i) => (
         <React.Fragment key={exp.id}>
-          {/* Node dot on the line */}
           <div
             ref={nodeRefs.current[i]}
             style={{
               position: "absolute",
-              top: `calc(${exp.nodeAt * 100}vh - 24px)`,
+              top: `calc(${exp.pos * 100}vh - 24px)`,
               left: "50%",
               transform: "translateX(-50%) scale(0.4)",
               width: "12px",
@@ -552,14 +594,12 @@ function MobileProgressLine({ experiences }) {
             }}
           />
 
-          {/* Mobile Date Pill — above the card, anchored left of content area */}
           <MobileDatePill
             exp={exp}
             pillRef={pillRefs.current[i]}
             lineLeft={LINE_LEFT}
           />
 
-          {/* Mobile Experience Card — full-width to the right of the line */}
           <MobileExperienceCard
             exp={exp}
             cardRef={cardRefs.current[i]}
@@ -574,7 +614,7 @@ function MobileProgressLine({ experiences }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // MOBILE: MobileDatePill
 // ─────────────────────────────────────────────────────────────────────────────
-function MobileDatePill({ exp, pillRef, lineLeft }) {
+function MobileDatePill({ exp, pillRef }) {
   const contentGap = 14;
 
   return (
@@ -582,7 +622,7 @@ function MobileDatePill({ exp, pillRef, lineLeft }) {
       ref={pillRef}
       style={{
         position: "absolute",
-        top: `calc(${exp.nodeAt * 100}vh - 28px)`,
+        top: `calc(${exp.pos * 100}vh - 28px)`,
         left: `calc(50% + ${contentGap}px)`,
         background: "linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)",
         color: "#fff",
@@ -610,11 +650,9 @@ function MobileDatePill({ exp, pillRef, lineLeft }) {
 // ─────────────────────────────────────────────────────────────────────────────
 function MobileExperienceCard({ exp, cardRef, lineLeft }) {
   const contentGap = 14;
-  const cardLeftFromViewport = lineLeft + 1 + contentGap; // 39px
+  const cardLeftFromViewport = lineLeft + 1 + contentGap;
   const cardRightMargin = 16;
 
-  // CARD_HEIGHT: fixed height — tall enough to show content, compact enough
-  // to keep both cards visible on screen without dominating the viewport
   const CARD_HEIGHT = 240;
 
   return (
@@ -624,11 +662,11 @@ function MobileExperienceCard({ exp, cardRef, lineLeft }) {
         position: "absolute",
         display: "flex",
         flexDirection: "column",
-        top: `calc(${exp.nodeAt * 100}vh)`,
+        top: `calc(${exp.pos * 100}vh)`,
         left: `calc(50% + ${contentGap}px)`,
         width: `calc(100vw - ${cardLeftFromViewport + cardRightMargin}px)`,
         height: `${CARD_HEIGHT}px`,
-        overflow: "hidden", // clip outer container
+        overflow: "hidden",
         background: "var(--glass-bg)",
         backdropFilter: "blur(14px)",
         WebkitBackdropFilter: "blur(14px)",
@@ -645,9 +683,7 @@ function MobileExperienceCard({ exp, cardRef, lineLeft }) {
         textAlign: "left",
         boxSizing: "border-box",
       }}>
-      {/* ── Fixed header (role / location / company / divider) ── */}
       <div style={{ flexShrink: 0 }}>
-        {/* ── Top row: left (role + location) | right (company) ── */}
         <div
           style={{
             display: "flex",
@@ -655,7 +691,6 @@ function MobileExperienceCard({ exp, cardRef, lineLeft }) {
             alignItems: "flex-start",
             marginBottom: "6px",
           }}>
-          {/* Left: Role + Location */}
           <div>
             <div
               style={{
@@ -677,7 +712,6 @@ function MobileExperienceCard({ exp, cardRef, lineLeft }) {
             </div>
           </div>
 
-          {/* Right: Company */}
           <div
             style={{
               fontSize: "12px",
@@ -686,13 +720,12 @@ function MobileExperienceCard({ exp, cardRef, lineLeft }) {
               letterSpacing: "0.06em",
               textTransform: "uppercase",
               textAlign: "right",
-              paddingTop: "2px", // nudge to align with role baseline
+              paddingTop: "2px",
             }}>
             {exp.company}
           </div>
         </div>
 
-        {/* Divider */}
         <div
           style={{
             height: "1px",
@@ -703,12 +736,10 @@ function MobileExperienceCard({ exp, cardRef, lineLeft }) {
         />
       </div>
 
-      {/*  body */}
       <div
         style={{
           flex: 1,
         }}>
-        {/* Description */}
         <div
           style={{
             fontSize: "11px",
@@ -720,13 +751,11 @@ function MobileExperienceCard({ exp, cardRef, lineLeft }) {
         </div>
       </div>
 
-      {/* Tags */}
       <div
         style={{
-          flexShrink: 0, // never compressed
+          flexShrink: 0,
           paddingTop: "6px",
           paddingBottom: "10px",
-
           display: "flex",
           flexWrap: "wrap",
           gap: "4px",
@@ -750,7 +779,6 @@ function MobileExperienceCard({ exp, cardRef, lineLeft }) {
         ))}
       </div>
 
-      {/* ── Fade-out scroll hint at bottom ── */}
       <div
         style={{
           position: "absolute",
