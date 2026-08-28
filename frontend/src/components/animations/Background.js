@@ -1,26 +1,23 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import { gsap } from "gsap";
-
-const INNER_W_VW = 118;
-const END_X_PERCENT = -((INNER_W_VW - 100) / INNER_W_VW) * 100;
+import { useEffect, useMemo, useState } from "react";
+import Particles from "@tsparticles/react";
 
 export default function Background() {
-  const [mounted, setMounted] = useState(false);
-  const [isDark, setIsDark] = useState(false);
-  const innerRef = useRef(null);
+  const [isDark, setIsDark] = useState(true);
 
   useEffect(() => {
-    setMounted(true);
-
     const getTheme = () =>
       document.documentElement.getAttribute("data-theme") || "light";
 
-    const updateTheme = () => setIsDark(getTheme() === "dark");
+    const updateTheme = () => {
+      setIsDark(getTheme() === "dark");
+    };
+
     updateTheme();
 
     const observer = new MutationObserver(updateTheme);
+
     observer.observe(document.documentElement, {
       attributes: true,
       attributeFilter: ["data-theme"],
@@ -29,55 +26,95 @@ export default function Background() {
     return () => observer.disconnect();
   }, []);
 
-  useEffect(() => {
-    if (!mounted || !innerRef.current) return;
+  const options = useMemo(
+    () => ({
+      fullScreen: {
+        enable: false,
+      },
 
-    const el = innerRef.current;
-    // quickSetter skips the GSAP tween overhead — just sets the value directly
-    const setX = gsap.quickSetter(el, "xPercent");
+      background: {
+        color: "transparent",
+      },
 
-    const handleBgScroll = (e) => {
-      setX(e.detail * END_X_PERCENT);
-    };
+      fpsLimit: 60,
 
-    window.addEventListener("bgscroll", handleBgScroll);
-    return () => window.removeEventListener("bgscroll", handleBgScroll);
-  }, [mounted]);
+      particles: {
+        number: {
+          value: 45,
+          density: {
+            enable: true,
+            area: 1200,
+          },
+        },
 
-  if (!mounted) return null;
+        paint: {
+          fill: {
+            color: {
+              value: isDark ? "#ffffff" : "#000000",
+            },
+          },
+        },
+
+        shape: {
+          type: "circle",
+        },
+
+        opacity: {
+          value: 0.7,
+        },
+
+        size: {
+          value: {
+            min: 2,
+            max: 4,
+          },
+        },
+
+        links: {
+          enable: true,
+          distance: 300,
+          color: isDark ? "#ffffff" : "#000000",
+          opacity: 0.35,
+          width: 2.5,
+        },
+
+        move: {
+          enable: true,
+          speed: 0.6,
+          direction: "none",
+          random: true,
+          straight: false,
+          outModes: {
+            default: "bounce",
+          },
+        },
+      },
+
+      detectRetina: true,
+    }),
+    [isDark],
+  );
 
   return (
     <div
-      suppressHydrationWarning
       style={{
         position: "fixed",
-        top: 0,
-        left: 0,
+        inset: 0,
         width: "100vw",
         height: "100vh",
-        zIndex: -1,
+        zIndex: 0,
         pointerEvents: "none",
         overflow: "hidden",
       }}>
-      <div
-        ref={innerRef}
+      <Particles
+        key={isDark ? "dark" : "light"}
+        id="portfolio-particles"
+        options={options}
         style={{
-          width: `${INNER_W_VW}vw`,
+          width: "100%",
           height: "100%",
-          willChange: "transform",
-        }}>
-        <img
-          src={isDark ? "/dark-netweb.png" : "/light-netweb.png"}
-          alt=""
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            objectPosition: "left center",
-            display: "block",
-          }}
-        />
-      </div>
+        }}
+      />
     </div>
   );
 }
