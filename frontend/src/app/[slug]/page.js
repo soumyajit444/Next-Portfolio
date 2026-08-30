@@ -67,8 +67,16 @@ export default function SlugPage() {
       const sectionEls = gsap.utils.toArray(".h-section", wrapper);
       const sectionCount = sectionEls.length;
 
+      const sectionWidths = sectionEls.map((el, i) => (i === 2 ? 350 : 100));
+
+      const totalWidth = sectionWidths.reduce((sum, width) => sum + width, 0);
+
+      sectionEls.forEach((el, i) => {
+        el.style.width = `${sectionWidths[i]}vw`;
+      });
+
       const tween = gsap.to(sectionEls, {
-        xPercent: -100 * (sectionCount - 1),
+        x: () => -(totalWidth - 100) * (window.innerWidth / 100),
         ease: "none",
         scrollTrigger: {
           trigger: wrapper,
@@ -82,14 +90,14 @@ export default function SlugPage() {
               new CustomEvent("bgscroll", { detail: self.progress }),
             );
 
-            // 👇 Calculate index with a 70% threshold (triggers later, feels more accurate)
+            // Calculate index with a 70% threshold (triggers later, feels more accurate)
             const rawIndex = progress * (sectionCount - 1);
             const closestIndex = Math.min(
               Math.floor(rawIndex + 0.7),
               sectionCount - 1,
             );
 
-            // 👇 Only process if index changed
+            // Only process if index changed
             if (closestIndex !== pendingIndexRef.current) {
               pendingIndexRef.current = closestIndex;
               clearTimeout(settleTimerRef.current);
@@ -182,7 +190,7 @@ export default function SlugPage() {
         style={{
           display: "flex",
           flexWrap: "nowrap",
-          width: `${sections.length * 100}vw`,
+          width: `${(sections.length + 2) * 100}vw`,
           height: "100vh",
         }}>
         {sections.map(({ Component, id }, i) => (
@@ -194,7 +202,7 @@ export default function SlugPage() {
               width: "100vw",
               height: "100vh",
               flexShrink: 0,
-              overflow: i === 0 ? "visible" : "hidden",
+              overflow: "hidden",
               position: "relative",
               zIndex: i === 0 ? 0 : i,
             }}>

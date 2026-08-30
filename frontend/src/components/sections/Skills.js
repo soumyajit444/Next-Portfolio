@@ -6,7 +6,7 @@ import { Terminal, Globe, MapPin, Clock, Wifi, Sparkles } from "lucide-react";
 
 import SkillsPackedCircle from "@/components/ui/SkillsPackedCircle";
 
-const SECTION_START = 0.4;
+const SECTION_START = 0.25;
 const SECTION_END = 0.65;
 const SECTION_SPAN = SECTION_END - SECTION_START;
 
@@ -1091,13 +1091,23 @@ function PortalContent({ profile }) {
       pageRefs.current.forEach((ref, i) => {
         const el = ref.current;
         if (!el) return;
+
         const [tStart, tEnd] = SLIDE_THRESHOLDS[i];
-        const slideProgress = Math.max(
-          0,
-          Math.min(1, (lp - tStart) / (tEnd - tStart)),
-        );
+
+        if (lp < tStart) {
+          el.style.transform = "translate3d(0, 100%, 0)";
+          return;
+        }
+
+        if (lp >= tEnd) {
+          el.style.transform = "translate3d(0, 0, 0)";
+          return;
+        }
+
+        const slideProgress = (lp - tStart) / (tEnd - tStart);
         const ty = (1 - slideProgress) * 100;
-        el.style.transform = `translateY(${ty}%)`;
+
+        el.style.transform = `translate3d(0, ${ty}%, 0)`;
       });
 
       let active = 0;
@@ -1172,8 +1182,7 @@ function PortalContent({ profile }) {
                   background: PAGE_BG[i],
                   willChange: "transform",
                   transform: "translateY(100%)",
-                  transition:
-                    "transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.35s ease",
+                  transition: "border-color 0.35s ease",
                   overflow: "hidden",
                 }}>
                 <div
@@ -1310,8 +1319,7 @@ function PortalContent({ profile }) {
                 background: PAGE_BG[i],
                 willChange: "transform",
                 transform: "translateY(100%)",
-                transition:
-                  "transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.35s ease",
+                transition: "border-color 0.35s ease",
                 overflow: "hidden",
               }}>
               <div

@@ -61,7 +61,7 @@ export default function LoadingScreen({ onComplete, profile }) {
   }, []);
 
   useEffect(() => {
-    const DURATION = 3000;
+    const DURATION = profile ? 3000 : 15000;
     const ease = (t) =>
       t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
@@ -71,7 +71,7 @@ export default function LoadingScreen({ onComplete, profile }) {
       setProgress(Math.floor(ease(t) * 100));
       if (t < 1) {
         rafRef.current = requestAnimationFrame(tick);
-      } else {
+      } else if (profile) {
         setTimeout(() => {
           setVisible(false);
           setTimeout(() => onComplete?.(), 850);
