@@ -1070,9 +1070,7 @@ function PortalContent({ profile }) {
 
       const rightPanel = rightPanelRef.current;
       if (rightPanel) {
-        const rightOpacity =
-          lp < 0.25 ? lp / 0.25 : lp > 0.9 ? 1 - (lp - 0.9) / 0.1 : 1;
-        rightPanel.style.opacity = rightOpacity;
+        rightPanel.style.opacity = 1;
       }
 
       const leftPanel = leftPanelRef.current;
