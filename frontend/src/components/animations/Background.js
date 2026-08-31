@@ -107,7 +107,6 @@ export default function Background() {
         overflow: "hidden",
       }}>
       <Particles
-        key={isDark ? "dark" : "light"}
         id="portfolio-particles"
         options={options}
         style={{

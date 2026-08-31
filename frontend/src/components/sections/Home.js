@@ -118,7 +118,7 @@ function AnimatedCounter({
   );
 }
 
-export default function Home({ scrollProgress = 0, profile, isLoaded }) {
+export default function Home({ profile, isLoaded }) {
   const [mounted, setMounted] = useState(false);
   const [theme, setTheme] = useState("light");
   const [splineError, setSplineError] = useState(false);
@@ -170,13 +170,6 @@ export default function Home({ scrollProgress = 0, profile, isLoaded }) {
       hasAnimatedRef.current = true;
     }
   }, [isLoaded]);
-
-  // 3. Handle Spline Scale Animation (desktop only)
-  useEffect(() => {
-    if (!splineContainerRef.current || isMobile) return;
-    const scale = 1 + scrollProgress * 0.3;
-    splineContainerRef.current.style.transform = `scale(${scale})`;
-  }, [scrollProgress, isMobile]);
 
   // ── Resume Download Handler ──
   const handleDownloadResume = async () => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { memo, useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import { getProfileDetails } from "@/services/profileService";
 
@@ -25,6 +25,38 @@ const sections = [
   { Component: Contact, id: "contact" },
 ];
 
+const sectionWidths = [100, 100, 350, 100, 100];
+
+const totalWidth = sectionWidths.reduce((sum, width) => sum + width, 0);
+
+const Section = memo(function Section({
+  Component,
+  id,
+  index,
+  profile,
+  isLoaded,
+}) {
+  return (
+    <div
+      id={id}
+      className="h-section"
+      style={{
+        width: `${sectionWidths[index]}vw`,
+        height: "100vh",
+        flexShrink: 0,
+        overflow: "hidden",
+        position: "relative",
+        zIndex: index === 0 ? 0 : index,
+      }}>
+      {index === 0 ? (
+        <Component profile={profile} isLoaded={isLoaded} />
+      ) : (
+        <Component profile={profile} />
+      )}
+    </div>
+  );
+});
+
 export default function SlugPage() {
   const params = useParams();
   const slug = params.slug;
@@ -34,19 +66,21 @@ export default function SlugPage() {
   const [error, setError] = useState(null);
 
   const wrapperRef = useRef(null);
-  const [heroScrollProgress, setHeroScrollProgress] = useState(0);
   const [loaded, setLoaded] = useState(false);
 
-  // 👇 Refs for stable section detection
+  // Refs for stable section detection
   const lastActiveIndexRef = useRef(-1);
   const settleTimerRef = useRef(null);
   const pendingIndexRef = useRef(-1);
 
+  // Fetch profile data
   useEffect(() => {
     if (!slug) return;
+
     const fetchData = async () => {
       try {
         setLoading(true);
+
         const data = await getProfileDetails(slug);
         setProfileData(data);
       } catch (err) {
@@ -56,53 +90,74 @@ export default function SlugPage() {
         setLoading(false);
       }
     };
+
     fetchData();
   }, [slug]);
 
+  // GSAP horizontal scroll
   useEffect(() => {
     if (!loaded || !wrapperRef.current) return;
 
     const wrapper = wrapperRef.current;
+
     const ctx = gsap.context(() => {
       const sectionEls = gsap.utils.toArray(".h-section", wrapper);
       const sectionCount = sectionEls.length;
 
-      const sectionWidths = sectionEls.map((el, i) => (i === 2 ? 350 : 100));
-
-      const totalWidth = sectionWidths.reduce((sum, width) => sum + width, 0);
+      if (!sectionCount) return;
 
       sectionEls.forEach((el, i) => {
         el.style.width = `${sectionWidths[i]}vw`;
       });
 
+      const horizontalDistance = (totalWidth - 100) * (window.innerWidth / 100);
+
       const tween = gsap.to(sectionEls, {
-        x: () => -(totalWidth - 100) * (window.innerWidth / 100),
+        x: -horizontalDistance,
         ease: "none",
+
         scrollTrigger: {
           trigger: wrapper,
           pin: wrapper,
           scrub: 1,
-          end: () => `+=${wrapper.offsetWidth}`,
+          end: () => `+=${horizontalDistance}`,
+
           onUpdate: (self) => {
-            const progress = Math.min(self.progress, 1);
-            setHeroScrollProgress(progress);
+            const progress = Math.min(Math.max(self.progress, 0), 1);
+
             window.dispatchEvent(
-              new CustomEvent("bgscroll", { detail: self.progress }),
+              new CustomEvent("bgscroll", {
+                detail: progress,
+              }),
             );
 
-            // Calculate index with a 70% threshold (triggers later, feels more accurate)
-            const rawIndex = progress * (sectionCount - 1);
-            const closestIndex = Math.min(
-              Math.floor(rawIndex + 0.7),
-              sectionCount - 1,
-            );
+            let closestIndex = 0;
+            let accumulated = 0;
 
-            // Only process if index changed
+            const viewportCenter =
+              progress * horizontalDistance + window.innerWidth / 2;
+
+            let closestDistance = Infinity;
+
+            sectionEls.forEach((el, index) => {
+              const width = sectionWidths[index] * (window.innerWidth / 100);
+
+              const sectionCenter = accumulated + width / 2;
+              const distance = Math.abs(sectionCenter - viewportCenter);
+
+              if (distance < closestDistance) {
+                closestDistance = distance;
+                closestIndex = index;
+              }
+
+              accumulated += width;
+            });
+
             if (closestIndex !== pendingIndexRef.current) {
               pendingIndexRef.current = closestIndex;
+
               clearTimeout(settleTimerRef.current);
 
-              // Wait for scroll to settle on this section before dispatching
               settleTimerRef.current = setTimeout(() => {
                 if (pendingIndexRef.current !== lastActiveIndexRef.current) {
                   lastActiveIndexRef.current = pendingIndexRef.current;
@@ -116,7 +171,7 @@ export default function SlugPage() {
                     }),
                   );
                 }
-              }, 150); // Adjust: 120-180ms is the sweet spot
+              }, 150);
             }
           },
         },
@@ -124,12 +179,28 @@ export default function SlugPage() {
 
       window.scrollToSection = (index) => {
         const st = tween.scrollTrigger;
+
         if (!st) return;
-        const totalScroll = st.end - st.start;
-        const targetProgress = index / (sectionCount - 1);
+
+        const clampedIndex = Math.max(0, Math.min(index, sectionCount - 1));
+
+        const viewportWidth = window.innerWidth;
+
+        let targetOffset = 0;
+
+        for (let i = 0; i < clampedIndex; i++) {
+          targetOffset += sectionWidths[i] * (viewportWidth / 100);
+        }
+
+        const targetScroll = Math.max(
+          0,
+          Math.min(targetOffset, horizontalDistance),
+        );
 
         gsap.to(window, {
-          scrollTo: { y: st.start + totalScroll * targetProgress },
+          scrollTo: {
+            y: st.start + targetScroll,
+          },
           duration: 1,
           ease: "power2.inOut",
         });
@@ -138,29 +209,41 @@ export default function SlugPage() {
       return () => {
         tween.kill();
         clearTimeout(settleTimerRef.current);
+
+        if (typeof window !== "undefined") {
+          window.scrollToSection = undefined;
+        }
       };
     }, wrapper);
 
     return () => ctx.revert();
   }, [loaded]);
 
-  // Handle initial hash on page load
+  // Handle initial hash
   useEffect(() => {
     if (!loaded) return;
 
     const hash = window.location.hash.replace("#", "");
-    const targetSection = sections.find((s) => s.id === hash);
+
+    const targetSection = sections.find((section) => section.id === hash);
 
     if (targetSection && typeof window.scrollToSection === "function") {
       const index = sections.indexOf(targetSection);
-      setTimeout(() => window.scrollToSection(index), 100);
+
+      setTimeout(() => {
+        window.scrollToSection(index);
+      }, 100);
     }
   }, [loaded]);
 
-  if (loading)
+  // Loading state
+  if (loading) {
     return (
       <LoadingScreen onComplete={() => setLoaded(true)} profile={profileData} />
     );
+  }
+
+  // Error state
   if (error || !profileData) {
     return (
       <div
@@ -178,44 +261,35 @@ export default function SlugPage() {
   }
 
   return (
-    <div style={{ overflowX: "hidden", position: "relative" }}>
+    <div
+      style={{
+        overflowX: "hidden",
+        position: "relative",
+      }}>
       {!loaded && (
         <LoadingScreen
           onComplete={() => setLoaded(true)}
           profile={profileData}
         />
       )}
+
       <div
         ref={wrapperRef}
         style={{
           display: "flex",
           flexWrap: "nowrap",
-          width: `${(sections.length + 2) * 100}vw`,
+          width: `${totalWidth}vw`,
           height: "100vh",
         }}>
         {sections.map(({ Component, id }, i) => (
-          <div
-            key={i}
+          <Section
+            key={id}
+            Component={Component}
             id={id}
-            className="h-section"
-            style={{
-              width: "100vw",
-              height: "100vh",
-              flexShrink: 0,
-              overflow: "hidden",
-              position: "relative",
-              zIndex: i === 0 ? 0 : i,
-            }}>
-            {i === 0 ? (
-              <Home
-                scrollProgress={heroScrollProgress}
-                profile={profileData}
-                isLoaded={loaded}
-              />
-            ) : (
-              <Component profile={profileData} />
-            )}
-          </div>
+            index={i}
+            profile={profileData}
+            isLoaded={loaded}
+          />
         ))}
       </div>
     </div>
