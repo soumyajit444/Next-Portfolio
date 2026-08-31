@@ -49,6 +49,11 @@ export default function LoadingScreen({ onComplete, profile }) {
   const [isMounted, setIsMounted] = useState(false);
   const rafRef = useRef(null);
   const startRef = useRef(null);
+  const onCompleteRef = useRef(onComplete);
+
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
 
   // Extract Dynamic Data with Fallbacks
   const firstName = profile?.FirstName || "Soumyajit";
@@ -74,14 +79,14 @@ export default function LoadingScreen({ onComplete, profile }) {
       } else if (profile) {
         setTimeout(() => {
           setVisible(false);
-          setTimeout(() => onComplete?.(), 850);
+          setTimeout(() => onCompleteRef.current?.(), 850);
         }, 500);
       }
     };
 
     rafRef.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [onComplete]);
+  }, []);
 
   const pct = progress / 100;
   const label = getLabel(progress);
@@ -100,6 +105,15 @@ export default function LoadingScreen({ onComplete, profile }) {
         @keyframes labelFade {
           from { opacity:0; transform:translateY(4px); }
           to   { opacity:1; transform:translateY(0); }
+        }
+
+        @keyframes noticePulse {
+          0%, 100% {
+            opacity: 0.45;
+          }
+          50% {
+            opacity: 1;
+          }
         }
 
         /* Responsive adjustments */
@@ -322,7 +336,7 @@ export default function LoadingScreen({ onComplete, profile }) {
 
         {/* Tagline — bottom left (Dynamic Year) */}
         <p
-          className="absolute bottom-10 left-11 font-light uppercase leading-[1.9] text-white/30 tagline-text"
+          className="absolute bottom-10 left-11 hidden font-light uppercase leading-[1.9] text-white/30 tagline-text sm:block"
           style={{ fontSize: 11, letterSpacing: "0.18em" }}>
           Making high-quality
           <br />
@@ -347,6 +361,23 @@ export default function LoadingScreen({ onComplete, profile }) {
             />
           ))}
         </div>
+        {/* Backend loading notice */}
+        <p
+          className="absolute bottom-10 left-1/2 -translate-x-1/2 text-center loading-notice"
+          style={{
+            margin: 0,
+
+            width: "min(70%, 420px)",
+            fontSize: "15px",
+            lineHeight: 1.6,
+            letterSpacing: "0.08em",
+            color: "rgba(255,255,255,0.35)",
+            fontWeight: 300,
+            animation: "noticePulse 2.5s ease-in-out infinite",
+          }}>
+          First-time loading may take a little longer while the backend wakes up
+          from free hosting.
+        </p>
       </div>
     </>
   );

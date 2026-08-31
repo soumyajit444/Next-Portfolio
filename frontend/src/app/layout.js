@@ -32,7 +32,7 @@ export default function RootLayout({ children }) {
     pathname?.startsWith("/create-profile");
 
   return (
-    <html lang="en" className={workSans.variable} data-theme="light">
+    <html lang="en" className={workSans.variable} data-theme="dark">
       <body suppressHydrationWarning>
         <ParticlesProvider init={particlesInit}>
           <AudioProvider>
