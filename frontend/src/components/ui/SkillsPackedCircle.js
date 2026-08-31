@@ -42,7 +42,7 @@ export default function SkillsPackedCircle({
       chartInstance.current = null;
       setIsReady(false);
     };
-  }, [skills, containerId, onSkillClick]);
+  }, [skills, containerId]);
 
   // Shared container style
   const containerStyle = {

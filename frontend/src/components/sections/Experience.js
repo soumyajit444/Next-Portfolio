@@ -351,7 +351,7 @@ function ExperienceCard({ exp, cardRef }) {
           : "translateY(12px) translateX(-16px)",
         transition:
           "opacity 0.55s cubic-bezier(0.22,1,0.36,1), transform 0.55s cubic-bezier(0.22,1,0.36,1)",
-        pointerEvents: "none",
+        pointerEvents: "auto",
         zIndex: 10000,
         textAlign: isRight ? "left" : "right",
       }}>
@@ -398,10 +398,17 @@ function ExperienceCard({ exp, cardRef }) {
 
       <div
         style={{
+          flex: 1,
+          minHeight: 0,
+          overflowY: "auto",
+          overflowX: "hidden",
           fontSize: "13.5px",
           color: "var(--color-text)",
           lineHeight: 1.65,
           marginBottom: "14px",
+          paddingRight: "6px",
+          scrollbarWidth: "thin",
+          scrollbarColor: "rgba(168,85,247,0.4) transparent",
         }}>
         {exp.description}
       </div>

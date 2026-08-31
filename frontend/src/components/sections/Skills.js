@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { Terminal, Globe, MapPin, Clock, Wifi, Sparkles } from "lucide-react";
 
@@ -47,14 +47,14 @@ function useIsMobile(breakpoint = 768) {
 function SkillsPage({ profile, isMobile }) {
   const skills = profile?.Skills || [];
 
-  const handleSkillClick = (skill) => {
+  const handleSkillClick = useCallback((skill) => {
     console.log("Skill clicked:", skill);
     window.dispatchEvent(
       new CustomEvent("skillSelected", {
         detail: { skillName: skill.Name, rating: skill.Rating },
       }),
     );
-  };
+  }, []);
 
   if (!skills || skills.length === 0) {
     return (
