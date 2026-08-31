@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { createPortal } from "react-dom";
 
 // ── Scroll Section Constants ─────────────────────────────────────────────────
@@ -542,7 +542,6 @@ function ContactContent({ profile, revealProgress }) {
   const [hoveredContact, setHoveredContact] = useState(null);
   const [titleHovered, setTitleHovered] = useState(false);
   const [btnHovered, setBtnHovered] = useState(false);
-  const canvasRef = useRef(null);
 
   const contactInfo = profile?.ContactInfo || {};
   const CONTACTS = useMemo(() => getContactItems(contactInfo), [contactInfo]);
@@ -567,55 +566,6 @@ function ContactContent({ profile, revealProgress }) {
   const textareaMinHeight = isTiny ? 62 : isSmall ? 80 : 150;
 
   const computedPanelStyle = getPanelStyle(bp);
-
-  // Canvas animation
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    let frame,
-      t = 0;
-    const resize = () => {
-      canvas.width = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
-    };
-    resize();
-    window.addEventListener("resize", resize);
-    const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      t += 0.003;
-      const cols = 8,
-        rows = 5;
-      const cw = canvas.width / cols,
-        ch = canvas.height / rows;
-      for (let i = 0; i <= cols; i++) {
-        const x = i * cw,
-          wave = Math.sin(t + i * 0.4) * 6;
-        ctx.beginPath();
-        ctx.moveTo(x + wave, 0);
-        ctx.lineTo(x - wave, canvas.height);
-        ctx.strokeStyle = `rgba(139,92,246,${0.04 + Math.abs(Math.sin(t + i)) * 0.04})`;
-        ctx.lineWidth = 1;
-        ctx.stroke();
-      }
-      for (let j = 0; j <= rows; j++) {
-        const y = j * ch,
-          wave = Math.sin(t + j * 0.6) * 6;
-        ctx.beginPath();
-        ctx.moveTo(0, y + wave);
-        ctx.lineTo(canvas.width, y - wave);
-        ctx.strokeStyle = `rgba(139,92,246,${0.04 + Math.abs(Math.sin(t + j)) * 0.04})`;
-        ctx.lineWidth = 1;
-        ctx.stroke();
-      }
-      frame = requestAnimationFrame(draw);
-    };
-    draw();
-    return () => {
-      cancelAnimationFrame(frame);
-      window.removeEventListener("resize", resize);
-    };
-  }, []);
 
   const handleChange = (e) =>
     setFormState((s) => ({ ...s, [e.target.name]: e.target.value }));
@@ -1165,18 +1115,6 @@ function ContactContent({ profile, revealProgress }) {
             )}
           </div>
         </div>
-
-        <canvas
-          ref={canvasRef}
-          style={{
-            position: "absolute",
-            inset: 0,
-            width: "100%",
-            height: "100%",
-            pointerEvents: "none",
-            zIndex: 1,
-          }}
-        />
       </section>
     </>
   );
