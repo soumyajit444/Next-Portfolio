@@ -187,6 +187,7 @@ export const updateProfile = async (slug, data, secret) => {
   const projectsPayload = filteredProjects.map((p) => ({
     Name: p.Name || "",
     Description: p.Description || "",
+    Link: p.Link || "",
     Links: (p.Links || []).filter(Boolean),
     Media: (p.Media || [])
       .filter((m) => m.url && m.publicId) // existing uploads only

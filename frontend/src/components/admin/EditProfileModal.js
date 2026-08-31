@@ -137,6 +137,13 @@ const ChipInput = ({ items, onChange }) => {
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
         onKeyDown={handleKeyDown}
+        onBlur={() => {
+          const val = inputValue.trim();
+          if (val && !items.includes(val)) {
+            onChange([...items, val]);
+            setInputValue("");
+          }
+        }}
         placeholder={items.length === 0 ? "Type and press Enter..." : ""}
         style={{
           border: "none",

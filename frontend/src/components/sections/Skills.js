@@ -555,11 +555,11 @@ function ProjectsPage({ profile, isMobile }) {
 
             {hasLinks &&
               links.map((link, li) => {
-                const isGithub = link?.url?.includes("github");
+                const isGithub = link?.toLowerCase().includes("github");
                 return (
                   <a
                     key={li}
-                    href={link.url}
+                    href={link}
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{
@@ -1348,6 +1348,18 @@ function PortalContent({ profile }) {
               key={label}
               ref={navRefs.current[i]}
               onClick={() => handleNavClick(i)}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform =
+                  i === activeRef.current
+                    ? "translateX(4px) scale(1.04)"
+                    : "translateX(0px) scale(1.04)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform =
+                  i === activeRef.current
+                    ? "translateX(4px)"
+                    : "translateX(0px)";
+              }}
               style={{
                 ...styles.navItem,
                 cursor: "pointer",
