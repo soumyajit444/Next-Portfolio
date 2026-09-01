@@ -6,9 +6,11 @@ import { Terminal, Globe, MapPin, Clock, Wifi, Sparkles } from "lucide-react";
 
 import SkillsPackedCircle from "@/components/ui/SkillsPackedCircle";
 
-const SECTION_START = 0.25;
-const SECTION_END = 0.65;
-const SECTION_SPAN = SECTION_END - SECTION_START;
+const DESKTOP_SECTION_START = 0.25;
+const DESKTOP_SECTION_END = 0.65;
+
+const MOBILE_SECTION_START = 0.35;
+const MOBILE_SECTION_END = 0.65;
 
 const NAV_ITEMS = ["Skills", "Tools", "Projects", "Location"];
 
@@ -21,13 +23,26 @@ const SLIDE_THRESHOLDS = [
 
 const ACTIVE_AT = [0, ...SLIDE_THRESHOLDS.slice(1).map(([start]) => start)];
 
-function scrollToTabProgress(targetLocalProgress) {
+function scrollToTabProgress(targetLocalProgress, isMobile) {
+  const sectionStart = isMobile ? MOBILE_SECTION_START : DESKTOP_SECTION_START;
+
+  const sectionEnd = isMobile ? MOBILE_SECTION_END : DESKTOP_SECTION_END;
+
+  const sectionSpan = sectionEnd - sectionStart;
+
   const nudgedProgress = Math.min(1, targetLocalProgress + 0.15);
-  const globalProgress = SECTION_START + nudgedProgress * SECTION_SPAN;
+
+  const globalProgress = sectionStart + nudgedProgress * sectionSpan;
+
   const scrollableHeight =
     document.documentElement.scrollHeight - window.innerHeight;
+
   const targetY = globalProgress * scrollableHeight;
-  window.scrollTo({ top: targetY, behavior: "smooth" });
+
+  window.scrollTo({
+    top: targetY,
+    behavior: "smooth",
+  });
 }
 
 function useIsMobile(breakpoint = 768) {
@@ -456,7 +471,7 @@ function ProjectsPage({ profile, isMobile }) {
   if (!hasProjects) {
     return (
       <div style={getPageInner(isMobile)}>
-        <div style={styles.pageLabel}>04 / Projects</div>
+        <div style={styles.pageLabel}>03 / Projects</div>
         <h2 style={getPageTitle(isMobile)}>Selected Work</h2>
         <p style={getPageSubtitle(isMobile)}>
           A few things built with care — each one a different kind of problem.
@@ -526,7 +541,7 @@ function ProjectsPage({ profile, isMobile }) {
 
   return (
     <div style={{ ...getPageInner(isMobile), gap: 0 }}>
-      <div style={styles.pageLabel}>04 / Projects</div>
+      <div style={styles.pageLabel}>03 / Projects</div>
 
       <div style={{ display: "flex", alignItems: "flex-end", gap: "16px" }}>
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -873,7 +888,7 @@ function LocationPage({ profile, isMobile }) {
 
   return (
     <div style={getPageInner(isMobile)}>
-      <div style={styles.pageLabel}>03 / Location</div>
+      <div style={styles.pageLabel}>04 / Location</div>
       <h2 style={getPageTitle(isMobile)}>{pageTitle}</h2>
       <p style={getPageSubtitle(isMobile)}>
         {street || state
@@ -1044,7 +1059,11 @@ function PortalContent({ profile }) {
   const activeRef = useRef(0);
 
   const handleNavClick = (index) => {
-    scrollToTabProgress(ACTIVE_AT[index]);
+    const targetLocalProgress = ACTIVE_AT[index];
+
+    if (targetLocalProgress == null) return;
+
+    scrollToTabProgress(targetLocalProgress, isMobile);
   };
 
   useEffect(() => {
@@ -1058,12 +1077,21 @@ function PortalContent({ profile }) {
       const wrapper = wrapperRef.current;
       if (!wrapper) return;
 
+      const sectionStart = isMobile
+        ? MOBILE_SECTION_START
+        : DESKTOP_SECTION_START;
+
+      const sectionEnd = isMobile ? MOBILE_SECTION_END : DESKTOP_SECTION_END;
+
+      const sectionSpan = sectionEnd - sectionStart;
+
       const lp = Math.max(
         0,
-        Math.min(1, (globalProgress - SECTION_START) / SECTION_SPAN),
+        Math.min(1, (globalProgress - sectionStart) / sectionSpan),
       );
+
       const inSection =
-        globalProgress >= SECTION_START && globalProgress <= SECTION_END;
+        globalProgress >= sectionStart && globalProgress <= sectionEnd;
 
       wrapper.style.opacity = 1;
       wrapper.style.visibility = inSection ? "visible" : "hidden";
@@ -1143,7 +1171,7 @@ function PortalContent({ profile }) {
           flexDirection: "column",
           opacity: 0,
           visibility: "hidden",
-          zIndex: 998,
+          zIndex: 1100,
           transition: "opacity 0.3s ease",
           paddingTop: "15vh",
           paddingBottom: "15vh",
@@ -1298,7 +1326,7 @@ function PortalContent({ profile }) {
         display: "flex",
         opacity: 0,
         visibility: "hidden",
-        zIndex: 998,
+        zIndex: 1100,
         transition: "opacity 0.3s ease",
       }}>
       <div ref={leftPanelRef} style={styles.leftPanel}>
@@ -1341,7 +1369,15 @@ function PortalContent({ profile }) {
         </div>
       </div>
 
-      <div ref={rightPanelRef} style={{ ...styles.rightPanel, opacity: 0 }}>
+      <div
+        ref={rightPanelRef}
+        style={{
+          ...styles.rightPanel,
+          opacity: 0,
+          position: "relative",
+          zIndex: 2,
+          pointerEvents: "auto",
+        }}>
         <div style={styles.navList}>
           {NAV_ITEMS.map((label, i) => (
             <div
@@ -1421,13 +1457,21 @@ function applyNavStyles(refs, activeIndex, isMobile) {
     const isActive = i === activeIndex;
     el.style.background = isActive
       ? "rgba(168,85,247,0.18)"
-      : "var(--color-bg)";
+      : "var(--glass-bg)";
     el.style.borderColor = isActive
       ? "var(--color-border)"
       : "var(--color-border-muted)";
 
     if (!isMobile) {
-      el.style.transform = isActive ? "translateX(4px)" : "translateX(0px)";
+      const isHovered = el.matches(":hover");
+
+      el.style.transform = isHovered
+        ? isActive
+          ? "translateX(4px) scale(1.04)"
+          : "translateX(0px) scale(1.04)"
+        : isActive
+          ? "translateX(4px)"
+          : "translateX(0px)";
     }
 
     if (isMobile) {

@@ -59,6 +59,11 @@ const transformExperiences = (workExperiences) => {
   // Trigger point (along growProgress, 0..1) at which each chunk activates.
   const chunkThresholds = Array.from({ length: numChunks }, (_, c) => {
     if (numChunks === 1) return NODE_RANGE_START;
+
+    if (c === 1 && numChunks === 2) {
+      return 0.7;
+    }
+
     return (
       NODE_RANGE_START +
       (c / (numChunks - 1)) * (NODE_RANGE_END - NODE_RANGE_START)

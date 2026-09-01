@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import { getProfileDetails } from "@/services/profileService";
 
@@ -15,7 +15,7 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ScrollToPlugin } from "gsap/ScrollToPlugin";
 
-gsap.registerPlugin(ScrollToPlugin, ScrollTrigger);
+gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
 
 const sections = [
   { Component: Home, id: "home" },
@@ -25,37 +25,11 @@ const sections = [
   { Component: Contact, id: "contact" },
 ];
 
-const sectionWidths = [100, 100, 350, 100, 100];
+const DESKTOP_SECTION_WIDTHS = [100, 100, 350, 100, 100];
+const MOBILE_SECTION_WIDTHS = [100, 100, 150, 100, 100];
 
-const totalWidth = sectionWidths.reduce((sum, width) => sum + width, 0);
-
-const Section = memo(function Section({
-  Component,
-  id,
-  index,
-  profile,
-  isLoaded,
-}) {
-  return (
-    <div
-      id={id}
-      className="h-section"
-      style={{
-        width: `${sectionWidths[index]}vw`,
-        height: "100vh",
-        flexShrink: 0,
-        overflow: "hidden",
-        position: "relative",
-        zIndex: index === 0 ? 0 : index,
-      }}>
-      {index === 0 ? (
-        <Component profile={profile} isLoaded={isLoaded} />
-      ) : (
-        <Component profile={profile} />
-      )}
-    </div>
-  );
-});
+const DESKTOP_SECTION_NAV_POSITIONS = [0.0, 0.15, 0.3, 0.66, 1.0];
+const MOBILE_SECTION_NAV_POSITIONS = [0.0, 0.225, 0.41, 0.7, 1.0];
 
 export default function SlugPage() {
   const params = useParams();
@@ -64,23 +38,41 @@ export default function SlugPage() {
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [heroScrollProgress, setHeroScrollProgress] = useState(0);
+  const [loaded, setLoaded] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   const wrapperRef = useRef(null);
-  const [loaded, setLoaded] = useState(false);
 
-  // Refs for stable section detection
-  const lastActiveIndexRef = useRef(-1);
+  const lastActiveIndexRef = useRef(0);
+  const pendingIndexRef = useRef(0);
   const settleTimerRef = useRef(null);
-  const pendingIndexRef = useRef(-1);
 
-  // Fetch profile data
+  const navigationLockRef = useRef(false);
+  const navigationTargetRef = useRef(-1);
+  const navigationTweenRef = useRef(null);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 767px)");
+
+    const handleChange = () => {
+      setIsMobile(mediaQuery.matches);
+    };
+
+    handleChange();
+    mediaQuery.addEventListener("change", handleChange);
+
+    return () => {
+      mediaQuery.removeEventListener("change", handleChange);
+    };
+  }, []);
+
   useEffect(() => {
     if (!slug) return;
 
     const fetchData = async () => {
       try {
         setLoading(true);
-
         const data = await getProfileDetails(slug);
         setProfileData(data);
       } catch (err) {
@@ -94,36 +86,76 @@ export default function SlugPage() {
     fetchData();
   }, [slug]);
 
-  // GSAP horizontal scroll
   useEffect(() => {
     if (!loaded || !wrapperRef.current) return;
 
     const wrapper = wrapperRef.current;
 
+    const sectionWidths = isMobile
+      ? MOBILE_SECTION_WIDTHS
+      : DESKTOP_SECTION_WIDTHS;
+
+    const sectionNavPositions = isMobile
+      ? MOBILE_SECTION_NAV_POSITIONS
+      : DESKTOP_SECTION_NAV_POSITIONS;
+
     const ctx = gsap.context(() => {
-      const sectionEls = gsap.utils.toArray(".h-section", wrapper);
-      const sectionCount = sectionEls.length;
+      const sectionElements = Array.from(
+        wrapper.querySelectorAll(".h-section"),
+      );
 
-      if (!sectionCount) return;
+      const totalWidth = sectionElements.reduce(
+        (total, section) => total + section.getBoundingClientRect().width,
+        0,
+      );
 
-      sectionEls.forEach((el, i) => {
-        el.style.width = `${sectionWidths[i]}vw`;
-      });
+      const viewportWidth = window.innerWidth;
+      const maxHorizontalScroll = Math.max(totalWidth - viewportWidth, 1);
 
-      const horizontalDistance = (totalWidth - 100) * (window.innerWidth / 100);
+      const setActiveSection = (index) => {
+        if (index === lastActiveIndexRef.current) return;
 
-      const tween = gsap.to(sectionEls, {
-        x: -horizontalDistance,
+        lastActiveIndexRef.current = index;
+        pendingIndexRef.current = index;
+
+        window.dispatchEvent(
+          new CustomEvent("sectionchange", {
+            detail: {
+              index,
+              id: sections[index]?.id,
+            },
+          }),
+        );
+      };
+
+      const getActiveIndex = (progress) => {
+        let activeIndex = 0;
+
+        for (let i = sectionNavPositions.length - 1; i >= 0; i--) {
+          if (progress >= sectionNavPositions[i]) {
+            activeIndex = i;
+            break;
+          }
+        }
+
+        return Math.min(activeIndex, sections.length - 1);
+      };
+
+      const tween = gsap.to(wrapper, {
+        x: -maxHorizontalScroll,
         ease: "none",
-
         scrollTrigger: {
           trigger: wrapper,
-          pin: wrapper,
+          pin: true,
           scrub: 1,
-          end: () => `+=${horizontalDistance}`,
+          invalidateOnRefresh: true,
+          end: () => `+=${maxHorizontalScroll}`,
 
           onUpdate: (self) => {
-            const progress = Math.min(Math.max(self.progress, 0), 1);
+            const progress = gsap.utils.clamp(0, 1, self.progress);
+            const activeIndex = getActiveIndex(progress);
+
+            setHeroScrollProgress(progress);
 
             window.dispatchEvent(
               new CustomEvent("bgscroll", {
@@ -131,100 +163,105 @@ export default function SlugPage() {
               }),
             );
 
-            let closestIndex = 0;
-            let accumulated = 0;
+            if (navigationLockRef.current) return;
 
-            const viewportCenter =
-              progress * horizontalDistance + window.innerWidth / 2;
-
-            let closestDistance = Infinity;
-
-            sectionEls.forEach((el, index) => {
-              const width = sectionWidths[index] * (window.innerWidth / 100);
-
-              const sectionCenter = accumulated + width / 2;
-              const distance = Math.abs(sectionCenter - viewportCenter);
-
-              if (distance < closestDistance) {
-                closestDistance = distance;
-                closestIndex = index;
-              }
-
-              accumulated += width;
-            });
-
-            if (closestIndex !== pendingIndexRef.current) {
-              pendingIndexRef.current = closestIndex;
+            if (activeIndex !== pendingIndexRef.current) {
+              pendingIndexRef.current = activeIndex;
 
               clearTimeout(settleTimerRef.current);
 
               settleTimerRef.current = setTimeout(() => {
-                if (pendingIndexRef.current !== lastActiveIndexRef.current) {
-                  lastActiveIndexRef.current = pendingIndexRef.current;
-
-                  window.dispatchEvent(
-                    new CustomEvent("sectionchange", {
-                      detail: {
-                        index: pendingIndexRef.current,
-                        id: sections[pendingIndexRef.current]?.id,
-                      },
-                    }),
-                  );
-                }
+                setActiveSection(activeIndex);
               }, 150);
             }
           },
         },
       });
 
+      navigationTweenRef.current = tween;
+
       window.scrollToSection = (index) => {
         const st = tween.scrollTrigger;
 
         if (!st) return;
+        if (index < 0 || index >= sections.length) return;
 
-        const clampedIndex = Math.max(0, Math.min(index, sectionCount - 1));
+        const targetProgress = gsap.utils.clamp(
+          0,
+          1,
+          sectionNavPositions[index],
+        );
 
-        const viewportWidth = window.innerWidth;
+        const targetY = st.start + (st.end - st.start) * targetProgress;
 
-        let targetOffset = 0;
-
-        for (let i = 0; i < clampedIndex; i++) {
-          targetOffset += sectionWidths[i] * (viewportWidth / 100);
+        if (navigationTweenRef.current) {
+          gsap.killTweensOf(window);
         }
 
-        const targetScroll = Math.max(
-          0,
-          Math.min(targetOffset, horizontalDistance),
-        );
+        navigationLockRef.current = true;
+        navigationTargetRef.current = index;
+        pendingIndexRef.current = index;
 
         gsap.to(window, {
           scrollTo: {
-            y: st.start + targetScroll,
+            y: targetY,
+            autoKill: false,
           },
           duration: 1,
           ease: "power2.inOut",
+
+          onComplete: () => {
+            const targetIndex = navigationTargetRef.current;
+
+            navigationLockRef.current = false;
+            navigationTargetRef.current = -1;
+
+            pendingIndexRef.current = targetIndex;
+            lastActiveIndexRef.current = targetIndex;
+
+            window.dispatchEvent(
+              new CustomEvent("sectionchange", {
+                detail: {
+                  index: targetIndex,
+                  id: sections[targetIndex]?.id,
+                },
+              }),
+            );
+          },
+
+          onInterrupt: () => {
+            navigationLockRef.current = false;
+            navigationTargetRef.current = -1;
+          },
         });
       };
+
+      requestAnimationFrame(() => {
+        ScrollTrigger.refresh();
+      });
 
       return () => {
         tween.kill();
         clearTimeout(settleTimerRef.current);
+        gsap.killTweensOf(window);
 
-        if (typeof window !== "undefined") {
-          window.scrollToSection = undefined;
+        if (window.scrollToSection) {
+          delete window.scrollToSection;
         }
+
+        navigationTweenRef.current = null;
       };
     }, wrapper);
 
-    return () => ctx.revert();
-  }, [loaded]);
+    return () => {
+      ctx.revert();
+    };
+  }, [loaded, isMobile]);
 
-  // Handle initial hash
   useEffect(() => {
     if (!loaded) return;
 
     const hash = window.location.hash.replace("#", "");
-
     const targetSection = sections.find((section) => section.id === hash);
 
     if (targetSection && typeof window.scrollToSection === "function") {
@@ -232,18 +269,16 @@ export default function SlugPage() {
 
       setTimeout(() => {
         window.scrollToSection(index);
-      }, 100);
+      }, 150);
     }
   }, [loaded]);
 
-  // Loading state
   if (loading) {
     return (
       <LoadingScreen onComplete={() => setLoaded(true)} profile={profileData} />
     );
   }
 
-  // Error state
   if (error || !profileData) {
     return (
       <div
@@ -259,6 +294,10 @@ export default function SlugPage() {
       </div>
     );
   }
+
+  const activeSectionWidths = isMobile
+    ? MOBILE_SECTION_WIDTHS
+    : DESKTOP_SECTION_WIDTHS;
 
   return (
     <div
@@ -278,18 +317,37 @@ export default function SlugPage() {
         style={{
           display: "flex",
           flexWrap: "nowrap",
-          width: `${totalWidth}vw`,
+          width: `${activeSectionWidths.reduce(
+            (sum, width) => sum + width,
+            0,
+          )}vw`,
           height: "100vh",
+          willChange: "transform",
         }}>
-        {sections.map(({ Component, id }, i) => (
-          <Section
+        {sections.map(({ Component, id }, index) => (
+          <div
             key={id}
-            Component={Component}
             id={id}
-            index={i}
-            profile={profileData}
-            isLoaded={loaded}
-          />
+            className="h-section"
+            style={{
+              width: `${activeSectionWidths[index]}vw`,
+              minWidth: `${activeSectionWidths[index]}vw`,
+              height: "100vh",
+              flexShrink: 0,
+              overflow: index === 0 ? "visible" : "hidden",
+              position: "relative",
+              zIndex: index === 0 ? 0 : index,
+            }}>
+            {index === 0 ? (
+              <Home
+                scrollProgress={heroScrollProgress}
+                profile={profileData}
+                isLoaded={loaded}
+              />
+            ) : (
+              <Component profile={profileData} />
+            )}
+          </div>
         ))}
       </div>
     </div>
